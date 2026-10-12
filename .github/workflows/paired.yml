@@ -1,69 +1,16 @@
 name: Paired firmware experiment
 on:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/paired.yml']
   workflow_dispatch:
     inputs:
-      adapter_sha:
-        description: 'Exact 40-character firmware commit containing the tested adapter'
-        required: true
-        default: b776105cd1e3edb93a91bada3f27aaecc25533dc
       candidate_ref:
-        description: 'Candidate firmware ref (resolved commit recorded in evidence)'
+        description: Firmware ref resolved once alongside develop and the three latest stable releases
         default: erg-spike-gate
         required: true
 permissions:
   contents: read
 jobs:
-  paired:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: simulator
-          persist-credentials: false
-      - name: Require immutable adapter commit
-        env:
-          ADAPTER_SHA: ${{ inputs.adapter_sha || 'b776105cd1e3edb93a91bada3f27aaecc25533dc' }}
-        run: '[[ "$ADAPTER_SHA" =~ ^[0-9a-f]{40}$ ]]'
-      - uses: actions/checkout@v4
-        with:
-          repository: doudar/SmartSpin2k
-          ref: ${{ inputs.adapter_sha || 'b776105cd1e3edb93a91bada3f27aaecc25533dc' }}
-          path: adapter
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: doudar/SmartSpin2k
-          ref: 082d1ee26ddb009d5132547087f77be03d1b0ab7
-          path: baseline
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: doudar/SmartSpin2k
-          ref: ${{ inputs.candidate_ref || 'b776105cd1e3edb93a91bada3f27aaecc25533dc' }}
-          path: candidate
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: python -m pip install -e ./simulator
-      - name: Closed-loop stuck-motor negative control
-        env:
-          SS2K_FIRMWARE_ROOT: ${{ github.workspace }}/adapter
-        run: python -m unittest discover -s simulator/tests -p test_packet_ride.py -v
-      - name: Run paired experiment and preserve provenance
-        run: python simulator/dashboard/experiment.py --firmware-root adapter --baseline-root baseline --candidate-root candidate --output output
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: paired-evidence
-          path: output
-          retention-days: 90
-      - name: Results summary
-        if: always()
-        run: |
-          echo '## Paired experiment evidence' >> "$GITHUB_STEP_SUMMARY"
-          echo '[Dashboard](https://doudar.github.io/smartspin2k-simulator/) · [Run artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Raw evidence is uploaded even when a provisional absolute band fails. See comparison.json for separate absolute and relative results. Pages publishes after this workflow completes; artifacts expire after 90 days.' >> "$GITHUB_STEP_SUMMARY"
+  experiment:
+    uses: ./.github/workflows/automatic.yml
+    with:
+      candidate_ref: ${{ inputs.candidate_ref }}
+      suite: short

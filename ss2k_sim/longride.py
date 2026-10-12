@@ -7,11 +7,13 @@ import argparse
 from dataclasses import asdict
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import numpy as np
 from .adapter import load_adapter, source_provenance, file_fingerprint
-from .cli import BASELINE_SHA, PACKAGE
+from .cli import PACKAGE
+from . import baseline
 from .model import BikeConfig
 from .performance import summarize, compare, DEFAULT_BUDGET, RELATIVE_ALLOWANCE
 from .runner import run
@@ -257,6 +259,7 @@ def parser():
     p.add_argument('command',choices=('train','compare'))
     p.add_argument('--firmware-root',type=Path,required=True); p.add_argument('--candidate-root',type=Path,required=True)
     p.add_argument('--baseline-root',type=Path); p.add_argument('--output',type=Path,required=True)
+    baseline.arguments(p)
     p.add_argument('--fixtures',type=Path); p.add_argument('--profile',type=Path,default=PACKAGE/'profiles/ride_20260927.json')
     p.add_argument('--minutes',type=int,nargs='+',choices=(90,),default=[90]); p.add_argument('--states',nargs='+',choices=('empty','full'),default=['empty','full'])
     p.add_argument('--sensitivities',type=int,nargs='+',choices=(3,5,10),default=[3,5,10])
@@ -266,6 +269,20 @@ def parser():
 
 def main(argv=None):
     a=parser().parse_args(argv)
+    if a.command == 'compare':
+        if a.baseline_root is None: raise ValueError('Paired long rides require baseline root')
+        selection = baseline.select(a)
+        with baseline.pinned_root(a.baseline_root, selection) as root:
+            a.baseline_root = root
+            return execute(a, selection)
+    # Training can be standalone; an enclosing comparison passes its resolved pin.
+    selection = baseline.select(a) if a.baseline_selection or os.environ.get(baseline.ENV) else None
+    if a.baseline_sha or a.baseline_mode != 'develop':
+        raise ValueError('Standalone training has no baseline override; use the enclosing experiment selection')
+    return execute(a, selection)
+
+
+def execute(a, selection=None):
     if a.output.exists() and any(a.output.iterdir()): raise ValueError('Output must be new/empty')
     a.output.mkdir(parents=True,exist_ok=True)
     adapter,ainfo=load_adapter(a.firmware_root); profile=json.loads(a.profile.read_text()); config=BikeConfig(**profile['bike'])
@@ -274,8 +291,7 @@ def main(argv=None):
         if a.baseline_root is None: raise ValueError('Paired long rides require baseline root')
         roots={'baseline':a.baseline_root,**roots}
     prov={k:source_provenance(v) for k,v in roots.items()}
-    if 'baseline' in prov and (prov['baseline']['commit']!=BASELINE_SHA or prov['baseline']['dirty']): raise ValueError('Baseline must be clean pinned develop')
-    manifest={'status':'incomplete','experiment':EXPERIMENT,'firmware':prov,'adapter':ainfo,
+    manifest={'status':'incomplete','experiment':EXPERIMENT,'firmware':prov,'adapter':ainfo,'baseline_selection':selection,
         'simulator_sha256':file_fingerprint(PACKAGE,[x for x in PACKAGE.rglob('*.py')]),'profile_sha256':hashlib.sha256(a.profile.read_bytes()).hexdigest(),
         'bike':asdict(config),'absolute_budgets':DEFAULT_BUDGET,'relative_allowances':RELATIVE_ALLOWANCE,'runs':[],'requested_cases':[{'minutes':m,'initial_state':s,'seed':seed,'sensitivity':sensitivity} for m in a.minutes for s in a.states for sensitivity in a.sensitivities for seed in a.seeds] if a.command=='compare' else [],'limitations':['Virtual packet/controller execution, no radio or ESP32 scheduler','RAM table import does not test flash save/load','Fully learned means measured support at all 45 declared training-grid cells, including brackets around 100/500 W, not the entire 300-cell firmware table','Window comparisons are descriptive; learning is not assumed to improve response','Same learned fixture for both firmware versions and all sensitivities; candidate-trained fixture provenance retained','Fitted effective plant, not independent hardware truth; positions/cadences outside recorded fit ranges are extrapolation']}
     try:
@@ -287,7 +303,7 @@ def main(argv=None):
             for name,snapshot in ([('full',fulls[-1])] if fulls else []):
                 fixture={'table':snapshot['table'],'sha256':digest(snapshot['table']),'training_time_s':snapshot['time_s'],
                     'coordinate_reference':{'homed':True,'min_position':config.min_position,'max_position':config.max_position,'position_divisor':snapshot['table']['position_divisor']},
-                    'training_seed':7,'training_sensitivity':5,'training_grid_watts':list(TRAINING_WATTS),'training_grid_cadences':list(TRAINING_CADENCES),'firmware':prov['candidate'],'adapter':ainfo,'coverage':coverage(snapshot['table']),
+                    'training_seed':7,'training_sensitivity':5,'training_grid_watts':list(TRAINING_WATTS),'training_grid_cadences':list(TRAINING_CADENCES),'firmware':prov['candidate'],'adapter':ainfo,'baseline_selection':selection,'coverage':coverage(snapshot['table']),
                     'training_segments':[asdict(s) for s in workout.segments], 'profile_sha256':manifest['profile_sha256'],
                     'provenance':'Unmodified production online learning from independently simulated CPS/CSC packets; no direct plant table injection'}
                 (a.output/(name+'.json')).write_text(json.dumps(fixture,indent=2)+'\n')

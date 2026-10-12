@@ -30,9 +30,12 @@ simulator/model/adapter/scenario/seed provenance are directly comparable.
 ## Running and publication
 
 Run **Paired firmware experiment** manually from Actions on `main`. The immutable
-adapter defaults to `782c2b5e303115f90bf8f81b724da5717362de39`; the baseline is
-release 26.10.1, `082d1ee26ddb009d5132547087f77be03d1b0ab7`. Candidate refs resolve
-into recorded exact commits. Changing the paired workflow also runs its pinned
+adapter defaults to `b776105cd1e3edb93a91bada3f27aaecc25533dc`. Every new
+experiment resolves the current `doudar/SmartSpin2k` `develop` head exactly once,
+before baseline checkout or training. All cases reuse that recorded clean SHA;
+resolution failure stops the experiment. Candidate refs resolve into recorded
+exact commits. The selected repository/ref, SHA, timestamp and selection mode
+are retained with the evidence. Changing the paired workflow also runs its pinned
 initial experiment on a main-branch push.
 
 The producer has read-only repository permissions and no persisted checkout
@@ -98,7 +101,7 @@ Initial investigation verified these official release SHAs:
 - 26.9.15: `8e861fbbf9e162497647318e3ddb8823926fcce9`.
 - 26.8.23: `afe356dc3ae828a4afcfdc5a92968bfa1d4175db`.
 
-All three now run under the same reviewed [test-only compatibility patch](../dashboard/compatibility/history-adapter.patch), plus current `782c2b5`. The **Historical release experiment** workflow runs the bounded four-candidate matrix and publishes each completed/failed experiment. The retained historical batch used simulator `d475d9fa`, baseline26.10.1 and identical seeds7/27/91. Future experiments and the dashboard use seed 7; original multi-seed evidence remains unchanged. Adapter base `f836c058` plus patch has fingerprint `098a900211f1803e2723634325061b6185b1d5e2fb20e13e8698d42097910f32`.
+All three now run under the same reviewed [test-only compatibility patch](../dashboard/compatibility/history-adapter.patch), plus current `782c2b5`. The **Historical release experiment** workflow runs the bounded four-candidate matrix and publishes each completed/failed experiment. The retained historical batch used simulator `d475d9fa`, baseline26.10.1 and identical seeds7/27/91. New historical batches use the current simulator and a once-resolved current `develop` baseline for every candidate, with seed 7. Release 26.10.1 remains a separate exact-pinned candidate checkout; it is never an alias for the baseline. Original multi-seed evidence remains unchanged. Adapter base `f836c058` plus patch has fingerprint `098a900211f1803e2723634325061b6185b1d5e2fb20e13e8698d42097910f32`.
 
 The patch supplies historical host API plumbing, preserves the historical empty-table constructors in fresh per-ride processes, and uses C++20 for an existing historical `starts_with` call. It does not add newer controller/learning behavior. An automated audit checks production bodies byte-for-byte, allowing only documented peripheral include and virtual-clock seams. The adapter provenance, initial-state audit and local source audit are in `dashboard/compatibility/`. Each cloud experiment includes its own newly executed source audit. Earlier unsupported-API preflight results are superseded, not firmware failures.
 
@@ -117,7 +120,8 @@ inferred positions. The display decimation preserves gap markers and endpoints.
 The **Long ride learning experiment** workflow now publishes
 `continuous-long-ride-sprints-v2`: six 90-minute paired cases, with **empty or
 fully learned starting tables × ERG sensitivity 3, 5 or 10**, all at seed 7.
-Training uses one canonical sensitivity-5 production-learning run, and every
+The current `develop` baseline is resolved once before training and retained
+across the whole six-case matrix. Training uses one canonical sensitivity-5 production-learning run, and every
 sensitivity receives the same earned fixture for its selected starting state.
 Both revisions receive identical starting-table data; no plant-to-table oracle
 or controller replacement is used. RAM import is not a flash-persistence test.
@@ -226,3 +230,5 @@ The dashboard uses seed 7 for every displayed test and has no seed selector.
 Charts, availability and summary counts are filtered to recorded seed-7 rows.
 Older evidence and other seeds remain in unchanged original downloads; they are
 never relabeled. Combinations without recorded seed-7 evidence show unavailable.
+
+The [automatic PR pipeline](automation.md) publishes short plus six long cases for each selected firmware revision. Its cross-repository relay must be enabled separately; workflow files alone do not activate future PR events.

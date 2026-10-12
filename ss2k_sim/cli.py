@@ -12,7 +12,7 @@ from .performance import summarize, compare, DEFAULT_BUDGET
 from .runner import run
 from .scenarios import scenarios
 
-BASELINE_SHA = '082d1ee26ddb009d5132547087f77be03d1b0ab7'
+from . import baseline
 PACKAGE = Path(__file__).resolve().parent
 
 
@@ -32,11 +32,20 @@ def parser():
         q.add_argument('--scenario', action='append', help='Run named subset; default full matrix')
         if command == 'compare':
             q.add_argument('--baseline-root', type=Path, required=True)
-            q.add_argument('--baseline-sha', default=BASELINE_SHA, help='Exact expected baseline commit; clean checkout required')
+            baseline.arguments(q)
     return p
 
 
 def execute(args):
+    if args.command == 'compare':
+        selection = baseline.select(args)
+        with baseline.pinned_root(args.baseline_root, selection) as root:
+            args.baseline_root = root
+            return _execute(args, selection)
+    return _execute(args)
+
+
+def _execute(args, selection=None):
     adapter, adapter_info = load_adapter(args.firmware_root, args.adapter_sha256)
     if args.command == 'check-adapter':
         print(json.dumps(adapter_info, indent=2))
@@ -48,8 +57,6 @@ def execute(args):
     if args.command == 'compare':
         roots = {'baseline': args.baseline_root.resolve(), **roots}
     provenance = {name: source_provenance(root) for name, root in roots.items()}
-    if args.command == 'compare' and (provenance['baseline']['commit'] != args.baseline_sha or provenance['baseline']['dirty']):
-        raise ValueError('Baseline must be a clean checkout at exact commit '+args.baseline_sha)
     profile = json.loads(args.profile.read_text())
     config = BikeConfig(**profile['bike'])
     if args.output.exists() and any(args.output.iterdir()):
@@ -57,7 +64,7 @@ def execute(args):
     args.output.mkdir(parents=True, exist_ok=True)
     manifest = {'status': 'incomplete', 'passed': False,
         'coverage_level': 'Production BLE packet decode/collect + FTMS procedure + ERG + virtual motor; no radio, ESP32 scheduler or physical hardware',
-        'firmware': provenance, 'adapter': adapter_info,
+        'firmware': provenance, 'adapter': adapter_info, 'baseline_selection': selection,
         'simulator_sha256': file_fingerprint(PACKAGE, [p for p in PACKAGE.rglob('*') if p.is_file() and '__pycache__' not in p.parts]),
         'profile_sha256': file_fingerprint(args.profile.parent, [args.profile]),
         'package_config_sha256': hashlib.sha256((PACKAGE.parent/'pyproject.toml').read_bytes()).hexdigest() if (PACKAGE.parent/'pyproject.toml').is_file() else None,

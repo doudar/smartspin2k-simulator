@@ -22,7 +22,7 @@ def case_checks(row,experiment):
     return checks
 
 def copy_inert(source,dest):
-    if source.is_symlink():raise ValueError('Symlink long-ride root')
+    if source.is_symlink() or any(parent.is_symlink() for parent in source.parents):raise ValueError('Symlink long-ride root')
     total=0
     for p in source.rglob('*') if source.exists() else []:
         if p.is_symlink():raise ValueError('Symlink in long-ride evidence')
@@ -44,14 +44,25 @@ def checked_case(row,experiment):
 
 def metadata_for(root,source):
     file=source/'run-metadata.json'
-    value=read_json(file) if file.is_file() else read_json(root/'run-metadata.json') if (root/'run-metadata.json').is_file() else {}
+    fallback=root/'run-metadata.json'
+    value=read_json(file) if file.exists() or file.is_symlink() else read_json(fallback) if fallback.exists() or fallback.is_symlink() else {}
     return validate_metadata(value)
 
-def prepare(root,stage,identity):
+def prepare(root,stage,identity,*,missing_cases=None):
     """Return canonical evidence directories, retaining partial/missing cases."""
+    if root.is_symlink() or any(parent.is_symlink() for parent in root.parents):raise ValueError('Symlink long-ride root')
     paired=root/'paired' if (root/'paired').is_dir() else root
-    if not (paired/'longride.json').is_file():return None
-    manifest=read_json(paired/'longride.json');valid_tree(manifest)
+    manifest_path=paired/'longride.json'
+    missing_manifest=False
+    if not manifest_path.exists() and not manifest_path.is_symlink():
+        if missing_cases is None:return None
+        missing_manifest=True
+        manifest={'manifest_source':'ingestion-placeholder','status':'incomplete','experiment':SPRINT_EXPERIMENT,'runs':[],'requested_cases':missing_cases,'error':'No longride.json produced; inspect workflow log.'}
+        manifest_bytes=json.dumps(manifest,allow_nan=False).encode()
+    else:
+        manifest=read_json(manifest_path)
+        manifest_bytes=manifest_path.read_bytes()
+    valid_tree(manifest)
     if not isinstance(manifest,dict) or manifest.get('experiment') not in LONG_RIDE_EXPERIMENTS:raise ValueError('Unknown long-ride manifest')
     experiment=manifest['experiment'];has_sprints=experiment==SPRINT_EXPERIMENT
     if not isinstance(manifest.get('initial_fixtures',{}),dict):raise ValueError('Invalid fixture manifest')
@@ -80,7 +91,7 @@ def prepare(root,stage,identity):
         if tm.get('experiment')!=experiment:raise ValueError('Training and paired experiment versions differ')
         canonical={**tm,'runs':[],'experiment':'long-ride-training-sprints-v2' if has_sprints else 'long-ride-training-v1'}
         (dest/'comparison.json').write_text(json.dumps(canonical,allow_nan=False))
-        meta=metadata_for(root,training);meta.update({'evidence_only':True,'notes':meta.get('notes','')+' Shared original production-learning training evidence. Not a paired acceptance run.'})
+        meta=metadata_for(root,training);meta.update({'evidence_only':True,'notes':(meta.get('notes') or '')+' Shared original production-learning training evidence. Not a paired acceptance run.'})
         (dest/'run-metadata.json').write_text(json.dumps(meta));sources.append(dest)
         training_id=identity+'-training'
     for key in cases:
@@ -109,10 +120,11 @@ def prepare(root,stage,identity):
                 canonical['status']='complete';canonical['passed']=overall['passed']
             else:canonical['error']='This requested case did not complete. Partial files, if produced, remain in the raw archive. '+str(manifest.get('error',''))
         else:canonical['error']='Long-ride batch failed before a case manifest was recorded. '+str(manifest.get('error',''))
-        (dest/'longride.json').write_bytes((paired/'longride.json').read_bytes())
+        (dest/'longride.json').write_bytes(manifest_bytes)
         (dest/'comparison.json').write_text(json.dumps(canonical,allow_nan=False))
         meta=metadata_for(root,paired)
-        meta.update({'experiment':experiment,'training_run_id':training_id,'notes':meta.get('notes','')+' Display dates describe the batch execution. Original longride.json and unchanged full-rate case files are archived. Fully learned means the declared measured tested grid only; RAM fixture import does not test flash persistence.'})
+        evidence_note=' No producer longride.json was available; archived manifest explicitly records unexecuted requested-case placeholders.' if missing_manifest else ' Display dates describe the batch execution. Original longride.json and unchanged full-rate case files are archived.'
+        meta.update({'experiment':experiment,'training_run_id':training_id,'notes':(meta.get('notes') or '')+evidence_note+' Fully learned means the declared measured tested grid only; RAM fixture import does not test flash persistence.'})
         if key:meta.update({'experiment_duration_min':minutes,'initial_state':state})
         if key and has_sprints:meta['sensitivity']=sensitivity
         (dest/'run-metadata.json').write_text(json.dumps(meta));sources.append(dest)

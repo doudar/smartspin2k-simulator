@@ -17,6 +17,8 @@ const ids=['sensitivity','sensitivity-filter','learning-scope','sprints','sprint
 const score={mae_w:1,p95_error_w:2};const row=(scenario,seed)=>({scenario,seed,absolute_passed:true,relative_passed:true,failures:[],scores:{baseline:score,candidate:score},reported_power_comparison:{absolute_passed:true,relative_passed:true,failures:[]}});
 const make=(id,rows,date)=>({id,metadata:{run_completed_at:date},comparison:{status:'complete',runs:rows},traces:{}});
 const runs={a:make('a',[row('steps',7),row('ramp',7),row('ramp',91)],'2026-10-12T17:00:00Z'),b:make('b',[row('steps',7),row('ramp',7),row('ramp',91)],'2026-10-11T17:00:00Z'),c:make('c',[row('steps',7)],'2026-10-10T17:00:00Z')};
+runs.a.comparison.baseline_selection={mode:'develop',ref:'refs/heads/develop',commit:'a'.repeat(40),resolved_at:'2026-10-12T21:00:00Z'};
+runs.b.comparison.baseline_selection={mode:'replay',commit:'b'.repeat(40)};
 // Nondefault seeds contain deliberately failing results and different traces.
 for(const run of Object.values(runs)){
  for(const item of run.comparison.runs.filter(item=>item.seed!==7)){item.absolute_passed=false;item.relative_passed=false;}
@@ -156,6 +158,8 @@ const cleared=(all=true)=>{assert.equal(main.hover.data,null);assert.equal(nodes
  const failure=main.delay('runs/b/data.json');const failed=nodes.history.change('b');failure.resolve({ok:false});await failed;cleared();assert.match(nodes.notice.textContent,/No previous run/);
  await nodes.firmware.change('branch:erg-spike-gate');assert.equal(nodes['chart-label'].textContent,'ramp / seed 7');
  // Zoom runs against actual pointer handlers, including touch opt-in and cancellations.
+ const baselineLive=harness('#a');await tick();assert.match(baselineLive.nodes.provenance.textContent,/develop resolved once for this experiment/);assert.match(baselineLive.nodes.provenance.textContent,/refs\/heads\/develop/);
+ const baselineReplay=harness('#b');await tick();assert.match(baselineReplay.nodes.provenance.textContent,/Archived baseline replay/);
  const z=harness('#long-full'),zn=z.nodes,run=code=>vm.runInContext(code,z.ctx);await tick();
  const click=id=>zn[id].events.click();
  const pointer=(kind,x,extra={})=>zn.chart.events[kind]({pointerId:1,pointerType:'mouse',button:0,isPrimary:true,clientX:x,clientY:100,preventDefault(){},...extra});

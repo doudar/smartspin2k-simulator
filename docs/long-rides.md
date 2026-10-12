@@ -30,6 +30,11 @@ controller or learner or make their different histories identical.
 
 ## Reproduce the matrix
 
+First resolve and check out the current `develop` baseline using the
+[paired setup](../README.md#paired-baselinecandidate-experiment). Keep its
+`SS2K_BASELINE_SELECTION` environment variable set before training and throughout
+the matrix; do not re-resolve between cases.
+
 ```sh
 python -m ss2k_sim.longride train \
   --firmware-root ../firmware-adapter --candidate-root ../firmware-candidate \
@@ -41,8 +46,10 @@ python -m ss2k_sim.longride compare \
   --sensitivities 3 5 10 --seeds 7 --stress
 ```
 
-The adapter must expose `Bridge.load_power_table`. Baseline remains pinned to
-082d1ee26ddb009d5132547087f77be03d1b0ab7. Sensitivity is passed to the native
+The adapter must expose `Bridge.load_power_table`. The baseline is the clean
+exact `develop` SHA recorded once for this experiment, before training; its
+selection is retained in the evidence. Archived replays require an explicit
+replay selection and remain labeled as replays. Sensitivity is passed to the native
 adapter initialization, which calls production `userConfig->setERGSensitivity`;
 it is not a simulator gain multiplier. Both builds receive exactly the same
 sensitivity, physical model, sensor schedules, cadence plan, seed and initial table.

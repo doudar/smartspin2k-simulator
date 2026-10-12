@@ -1,57 +1,16 @@
 name: Long ride learning experiment
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/longride.yml', 'ss2k_sim/longride.py', 'dashboard/longride_experiment.py']
+    inputs:
+      candidate_ref:
+        description: Firmware ref resolved once alongside develop and the three latest stable releases
+        default: erg-spike-gate
+        required: true
 permissions:
   contents: read
 jobs:
-  long-rides:
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: simulator
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: doudar/SmartSpin2k
-          ref: b776105cd1e3edb93a91bada3f27aaecc25533dc
-          path: adapter
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: doudar/SmartSpin2k
-          ref: b776105cd1e3edb93a91bada3f27aaecc25533dc
-          path: candidate
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: doudar/SmartSpin2k
-          ref: 082d1ee26ddb009d5132547087f77be03d1b0ab7
-          path: baseline
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: python -m pip install -e ./simulator
-      - name: Contract and stuck-motor negative controls
-        env:
-          SS2K_FIRMWARE_ROOT: ${{ github.workspace }}/adapter
-        run: python -m unittest discover -s simulator/tests -v
-      - name: Train actual production table and run six paired sprint rides
-        run: python simulator/dashboard/longride_experiment.py
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: paired-evidence
-          path: output
-          retention-days: 90
-      - name: Long-ride evidence summary
-        if: always()
-        run: |
-          echo '## Continuous long-ride learning evidence' >> "$GITHUB_STEP_SUMMARY"
-          echo '[Dashboard](https://doudar.github.io/smartspin2k-simulator/) · [Raw artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})' >> "$GITHUB_STEP_SUMMARY"
-          echo '90min × empty/full × ERG sensitivity3/5/10 × seed7, paired against26.10.1. Full means45 production-learned90/120/150/180/210/240/270/480/510W at75–95rpm cells, not all300firmware cells. Whole-ride AND early/middle/late probe AND sprint plant/sensor quality checks determine the result. Failed/incomplete experiments remain visible; shared training evidence is linked once. Full-rate raw artifacts expire after90days in Actions; retained Pages archives follow repository history policy.' >> "$GITHUB_STEP_SUMMARY"
+  experiment:
+    uses: ./.github/workflows/automatic.yml
+    with:
+      candidate_ref: ${{ inputs.candidate_ref }}
+      suite: long

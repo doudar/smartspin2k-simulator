@@ -60,4 +60,6 @@ def load_adapter(firmware_root, expected_sha256=None):
     spec.loader.exec_module(module)
     if not callable(getattr(module, 'build', None)) or not callable(getattr(module, 'Bridge', None)):
         raise ValueError('Firmware adapter must expose build() and Bridge')
-    return module, {'firmware_root': str(root), 'sha256': fingerprint, 'files': list(ADAPTER_FILES)}
+    return module, {'firmware_root': str(root), 'commit': revision(root),
+                    'dirty': bool(subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain'], text=True).strip()),
+                    'sha256': fingerprint, 'files': list(ADAPTER_FILES)}

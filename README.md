@@ -52,15 +52,21 @@ Optional reports: `python -m pip install -e '.[reports]'`.
 Prepare three local firmware checkouts. The adapter checkout should be pinned to
 `f836c058d5ab474c36ec6f9384256db70596ac5c`, which contains the reviewed packet
 adapter. Older controller revisions need not contain the adapter.
-The baseline must be clean and exactly at the pinned develop commit below.
+Every new experiment resolves the current `doudar/SmartSpin2k` `develop` head once.
+Its clean baseline checkout must match that exact SHA for the entire matrix.
 Use trusted firmware code: loading the adapter executes its Python build code.
 
-From the simulator checkout, create pinned sibling worktrees once:
+From the simulator checkout, create the adapter/candidate worktrees and resolve
+one baseline selection before any training or comparison:
 
 ```sh
 git clone https://github.com/doudar/SmartSpin2k.git ../firmware-adapter
 git -C ../firmware-adapter checkout --detach f836c058d5ab474c36ec6f9384256db70596ac5c
-git -C ../firmware-adapter worktree add --detach ../firmware-baseline 082d1ee26ddb009d5132547087f77be03d1b0ab7
+export SS2K_BASELINE_SELECTION="$PWD/baseline-selection.json"
+python -m ss2k_sim.baseline --output "$SS2K_BASELINE_SELECTION"
+BASELINE_SHA=$(python -c 'import json,os; print(json.load(open(os.environ["SS2K_BASELINE_SELECTION"]))["commit"])')
+git -C ../firmware-adapter fetch origin "$BASELINE_SHA"
+git -C ../firmware-adapter worktree add --detach ../firmware-baseline "$BASELINE_SHA"
 git -C ../firmware-adapter worktree add --detach ../firmware-candidate f836c058d5ab474c36ec6f9384256db70596ac5c
 python -m ss2k_sim check-adapter --firmware-root ../firmware-adapter
 python -m ss2k_sim compare \
@@ -70,8 +76,18 @@ python -m ss2k_sim compare \
   --output output/paired
 ```
 
-Default baseline: `082d1ee26ddb009d5132547087f77be03d1b0ab7`.
-An intentional baseline change requires `--baseline-sha EXACT_COMMIT`.
+Keep `SS2K_BASELINE_SELECTION` set for all cases in that experiment. The saved
+selection records the upstream repository/ref, exact SHA, resolution timestamp
+and selection mode; comparison evidence retains it. A moving `develop` branch
+cannot change an in-flight matrix. Resolution failures stop the run; no old pin
+or candidate checkout is used as fallback. Resolve a fresh selection for each
+new experiment and check out its recorded SHA before running comparisons.
+
+For an explicit archived replay only, replace the resolver command with
+`python -m ss2k_sim.baseline --output "$SS2K_BASELINE_SELECTION" --replay-sha EXACT_COMMIT`.
+Check out that exact archived SHA using the same steps above. Replay evidence is
+labeled separately from new experiments against current `develop`; it does not
+change archived results. An exact-SHA override is not a new-experiment default.
 `--adapter-sha256 HASH` optionally enforces the fingerprint printed by
 `check-adapter`. Select a diagnostic subset using `--scenario steps --seeds 7`.
 The full default matrix covers steps, ramps, cadence changes, differing power and
@@ -157,12 +173,17 @@ firmware path this integration test is skipped; ordinary contract tests still ru
 ## CI
 
 `tests.yml` runs standalone contract and negative-fixture tests without firmware
-hardware. `paired.yml` is manual and requires an exact 40-character adapter commit
-input; it resolves the candidate ref, checks out the immutable baseline and saves
-all experiment artifacts even on failure. It uses the verified firmware origin
-`doudar/SmartSpin2k`; private repositories need appropriately authorized checkout
-credentials. The standalone simulator must still have its exact published commit verified by
-remote CI; local tests alone do not establish that result.
+hardware. `automatic.yml` handles validated PR requests and manual runs. It freezes
+current `develop`, the candidate, and the three latest stable releases before any
+training or comparison, then runs the requested short/long matrix. Manual
+`paired.yml`, `historical.yml`, and `longride.yml` delegate to that same resolver.
+The adapter is separately reviewed and fingerprinted; there is no editable list
+of firmware release pins in the workflows. Failed or unsupported experiments
+retain their evidence. Firmware executes in an isolated, network-disabled
+container, while the trusted publication workflow handles the dashboard.
+See [automatic experiment setup and security](docs/automation.md).
+The exact published simulator commit must pass remote CI; local tests alone do
+not establish that result.
 
 ## Provenance and license
 
@@ -191,3 +212,5 @@ shows immutable experiment history, target-versus-actual traces, separate
 absolute and relative decisions, and downloadable raw evidence. It requires
 repository Pages source set to **GitHub Actions** before its first deployment.
 See [publishing, security, retention and historical-release notes](docs/dashboard.md).
+
+See [Automatic PR experiments](docs/automation.md) for the event relay, dynamic release policy, cache identities, fork approval boundary and one-time activation.
