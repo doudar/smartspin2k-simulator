@@ -12,7 +12,13 @@ ALLOWED = {'.json', '.csv', '.log', '.ptab', '.txt'}
 MAX_FILE = 32 * 1024 * 1024
 MAX_RUN = 200 * 1024 * 1024
 # Verified tested ref at experiment time; never infer the candidate from simulator main.
-KNOWN_TESTED_REFS = {'782c2b5e303115f90bf8f81b724da5717362de39':'erg-spike-gate'}
+# Exact commits also recorded with candidate_ref='erg-spike-gate' in archived runs.
+# Push-triggered short experiments omit candidate_ref; group only these verified
+# snapshots without rewriting their original metadata.
+KNOWN_TESTED_REFS = {
+    '782c2b5e303115f90bf8f81b724da5717362de39':'erg-spike-gate',
+    'b776105cd1e3edb93a91bada3f27aaecc25533dc':'erg-spike-gate',
+}
 
 def read_json(path):
     if path.is_symlink() or any(parent.is_symlink() for parent in path.parents): raise ValueError('Symlink in JSON path')

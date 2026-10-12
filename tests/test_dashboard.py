@@ -23,6 +23,14 @@ class DashboardTests(unittest.TestCase):
         m.build(self.history,self.root/'site')
         entry=json.loads((self.root/'site/history.json').read_text())[0]
         self.assertEqual(entry['display_ref'],'erg-spike-gate');self.assertEqual(entry['id'],'run-1')
+    def test_seed7_push_snapshot_uses_verified_branch_without_metadata_rewrite(self):
+        self.payload['firmware']={'candidate':{'commit':'b776105cd1e3edb93a91bada3f27aaecc25533dc'}}
+        (self.source/'comparison.json').write_text(json.dumps(self.payload))
+        m.materialize(self.source,self.dest,'run-1',{'run_completed_at':'2026-10-12T17:20:30Z'})
+        m.build(self.history,self.root/'site')
+        entry=json.loads((self.root/'site/history.json').read_text())[0]
+        self.assertEqual(entry['display_ref'],'erg-spike-gate');self.assertEqual(entry['id'],'run-1')
+        self.assertNotIn('candidate_ref',json.loads((self.dest/'data.json').read_text())['metadata'])
     def test_history_records_selector_pairs_and_exact_revisions(self):
         for index,commit in enumerate(['1'*40,'2'*40],1):
             self.payload['firmware']={'candidate':{'commit':commit}}
