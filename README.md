@@ -170,3 +170,11 @@ measurements of every operating condition.
 
 See the [ride capture procedure](docs/capture-procedure.md) for existing-firmware
 serial/UDP/web recording, provenance, privacy, and independent holdout data.
+
+## Performance dashboard
+
+The [GitHub Pages dashboard](https://doudar.github.io/smartspin2k-simulator/)
+shows immutable experiment history, target-versus-actual traces, separate
+absolute and relative decisions, and downloadable raw evidence. It requires
+repository Pages source set to **GitHub Actions** before its first deployment.
+See [publishing, security, retention and historical-release notes](docs/dashboard.md).

@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Trusted, dependency-free Pages renderer. Treat every experiment file as data.
+
+Never copies HTML/JS/SVG or executes code from an experiment/artifact. Evidence
+archives contain only allowlisted inert files. Existing runs are immutable.
+"""
+import argparse, csv, hashlib, io, json, math, re, shutil, zipfile
+from pathlib import Path
+
+SAFE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,100}$')
+ALLOWED = {'.json', '.csv', '.log', '.ptab', '.txt'}
+MAX_FILE = 32 * 1024 * 1024
+MAX_RUN = 200 * 1024 * 1024
+
+def read_json(path):
+    if path.stat().st_size > MAX_FILE: raise ValueError('JSON too large')
+    return json.loads(path.read_text(), parse_constant=lambda x: (_ for _ in ()).throw(ValueError('Nonfinite JSON')))
+
+def valid_tree(value, depth=0):
+    if depth > 25: raise ValueError('JSON too deep')
+    if isinstance(value, dict):
+        if len(value)>1000: raise ValueError('Oversized object')
+        for k,v in value.items():
+            if not isinstance(k,str) or len(k)>300: raise ValueError('Invalid key')
+            valid_tree(v,depth+1)
+    elif isinstance(value,list):
+        if len(value)>10000: raise ValueError('Oversized list')
+        for v in value: valid_tree(v,depth+1)
+    elif isinstance(value,str):
+        if len(value)>50000: raise ValueError('Oversized string')
+    elif isinstance(value,float) and not math.isfinite(value): raise ValueError('Nonfinite number')
+    elif value is not None and not isinstance(value,(str,int,float,bool)): raise ValueError('Invalid value')
+
+def collect(source):
+    files={}; total=0
+    for p in sorted(source.rglob('*')):
+        if p.is_symlink(): raise ValueError('Symlink in evidence')
+        if not p.is_file(): continue
+        rel=p.relative_to(source)
+        if any(not SAFE.fullmatch(s) for s in rel.parts): raise ValueError('Unsafe evidence path')
+        if p.suffix not in ALLOWED or 'build' in rel.parts: continue
+        size=p.stat().st_size; total+=size
+        if size>MAX_FILE or total>MAX_RUN: raise ValueError('Evidence exceeds size limit')
+        files[str(rel)]=p.read_bytes()
+    return files
+
+def validate(manifest):
+    valid_tree(manifest)
+    if not isinstance(manifest,dict) or manifest.get('status') not in ('complete','failed','incomplete','unsupported'): raise ValueError('Invalid status')
+    runs=manifest.get('runs',[])
+    if not isinstance(runs,list) or len(runs)>500: raise ValueError('Invalid runs')
+    seen=set()
+    for row in runs:
+        if not SAFE.fullmatch(row.get('scenario','')) or type(row.get('seed')) is not int: raise ValueError('Invalid scenario/seed')
+        key=(row['scenario'],row['seed'])
+        if key in seen: raise ValueError('Duplicate scenario/seed')
+        seen.add(key)
+        for flag in ('passed','absolute_passed','relative_passed'):
+            if row.get(flag) is not None and type(row[flag]) is not bool: raise ValueError('Invalid decision')
+    return manifest
+
+def chart(raw):
+    rows=[]
+    for n,row in enumerate(csv.DictReader(io.StringIO(raw.decode('utf8')))):
+        if n>1000000: raise ValueError('Trace too long')
+        vals=[float(row[k]) for k in ('time_s','target_w','power_w','latest_delivered_sensor_power_w')]
+        if not all(math.isfinite(v) and abs(v)<1e9 for v in vals): raise ValueError('Invalid trace')
+        rows.append(vals)
+    # Display-only decimation. Metrics are original full-clock scores; full CSV is archived.
+    step=max(1,math.ceil(len(rows)/1800))
+    return rows[::step]+([rows[-1]] if rows and (len(rows)-1)%step else [])
+
+def materialize(source, dest, run_id, metadata):
+    if not SAFE.fullmatch(run_id): raise ValueError('Invalid run id')
+    if dest.exists(): raise ValueError('Immutable run already exists: '+run_id)
+    files=collect(source)
+    if 'comparison.json' not in files: files['comparison.json']=json.dumps({'status':'incomplete','passed':False,'runs':[],'error':'No comparison.json produced; inspect workflow log.'}).encode()
+    manifest=validate(json.loads(files['comparison.json']))
+    valid_tree(metadata)
+    dest.mkdir(parents=True)
+    try:
+        with zipfile.ZipFile(dest/'evidence.zip','w',zipfile.ZIP_DEFLATED) as z:
+            for name,data in files.items(): z.writestr(name,data)
+        summary={'id':run_id,'metadata':metadata,'comparison':manifest,'traces':{}}
+        for row in manifest.get('runs',[]):
+            key=f"{row['scenario']}-{row['seed']}"
+            summary['traces'][key]={}
+            for variant in ('baseline','candidate'):
+                name=f'{variant}/{key}/trace.csv'
+                if name in files: summary['traces'][key][variant]=chart(files[name])
+        (dest/'data.json').write_text(json.dumps(summary,allow_nan=False,separators=(',',':')))
+        (dest/'comparison.json').write_bytes(files['comparison.json'])
+        (dest/'SHA256SUMS.txt').write_text('\n'.join(f'{hashlib.sha256(data).hexdigest()}  {name}' for name,data in files.items())+'\n')
+    except BaseException:
+        shutil.rmtree(dest); raise
+
+def build(history,output):
+    output.mkdir(parents=True,exist_ok=True)
+    entries=[]
+    for run in sorted(history.iterdir()) if history.exists() else []:
+        if run.name == '.gitkeep': continue
+        if not run.is_dir() or not SAFE.fullmatch(run.name): raise ValueError('Unsafe history directory')
+        data=read_json(run/'data.json'); validate(data['comparison']); valid_tree(data)
+        if data['id']!=run.name: raise ValueError('History id mismatch')
+        target=output/'runs'/run.name; target.mkdir(parents=True,exist_ok=True)
+        for name in ('data.json','comparison.json','SHA256SUMS.txt','evidence.zip'):
+            if (run/name).is_symlink(): raise ValueError('Symlink')
+            shutil.copyfile(run/name,target/name)
+        entries.append({'id':run.name,'metadata':data['metadata'],'status':data['comparison']['status'],'pairs':len(data['comparison'].get('runs',[]))})
+    for name in ('index.html','app.js','style.css'): shutil.copyfile(Path(__file__).parent/name,output/name)
+    (output/'history.json').write_text(json.dumps(entries))
+    (output/'.nojekyll').touch()
+
+def main():
+    p=argparse.ArgumentParser(); p.add_argument('--history',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--input',type=Path);p.add_argument('--run-id');p.add_argument('--metadata',type=Path)
+    a=p.parse_args()
+    if a.input:
+        materialize(a.input,a.history/a.run_id,a.run_id,read_json(a.metadata) if a.metadata else {})
+    build(a.history,a.output)
+if __name__=='__main__': main()

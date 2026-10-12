@@ -1,0 +1,126 @@
+name: Publish performance dashboard
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['dashboard/**', '.github/workflows/dashboard.yml']
+  workflow_run:
+    workflows: ['Paired firmware experiment', 'Historical release experiment']
+    types: [completed]
+permissions:
+  contents: read
+concurrency:
+  group: performance-dashboard
+  cancel-in-progress: false
+jobs:
+  render:
+    # Never check out a workflow_run head or execute experiment artifacts.
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore immutable history as data only
+        run: |
+          mkdir -p history
+          if git fetch origin gh-pages:refs/remotes/origin/gh-pages; then
+            git archive origin/gh-pages runs | tar -x -C history
+            mv history/runs/* history/
+            rmdir history/runs
+          fi
+          cp -rn dashboard/seed-history/. history/
+      - name: Locate completed experiment artifact
+        if: github.event_name == 'workflow_run'
+        id: evidence
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {owner:context.repo.owner,repo:context.repo.repo,run_id:run.id});
+            const artifact = artifacts.find(a => a.name === 'paired-evidence' && !a.expired);
+            core.setOutput('found', Boolean(artifact));
+      - uses: actions/download-artifact@v4
+        if: github.event_name == 'workflow_run' && steps.evidence.outputs.found == 'true'
+        with:
+          name: paired-evidence
+          path: incoming
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Validate inert evidence and render trusted site
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          SOURCE_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          SOURCE_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          SOURCE_DATE: ${{ github.event.workflow_run.updated_at }}
+        run: python dashboard/ingest.py --history history --output site --input incoming
+      - name: Run renderer security tests
+        run: python -m unittest discover -s tests -p 'test_dashboard.py' -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trusted-dashboard
+          path: site
+          include-hidden-files: true
+          retention-days: 90
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Actions summary
+        env:
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          echo '## Performance dashboard' >> "$GITHUB_STEP_SUMMARY"
+          echo '[Public dashboard](https://doudar.github.io/smartspin2k-simulator/) · [Retained evidence history](https://github.com/doudar/smartspin2k-simulator/tree/gh-pages/runs)' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Site artifact includes complete and failed/incomplete experiments. Absolute quality bands and relative regression decisions are separate. Deployment status is shown in the deploy job; the link is live only after Pages is enabled.' >> "$GITHUB_STEP_SUMMARY"
+  archive:
+    needs: render
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: trusted-dashboard
+          path: site
+      # This job executes only this fixed workflow, never files from the artifact.
+      - name: Append rendered run history
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          cd site
+          git init
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git remote add origin "https://github.com/$REPOSITORY.git"
+          HEADER="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c http.extraheader="AUTHORIZATION: basic $HEADER" fetch origin gh-pages || true
+          if git rev-parse FETCH_HEAD >/dev/null 2>&1; then
+            git reset --soft FETCH_HEAD
+          fi
+          git -c core.hooksPath=/dev/null add .
+          git -c core.hooksPath=/dev/null commit -m "Archive dashboard run $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT" || true
+          git -c core.hooksPath=/dev/null -c http.extraheader="AUTHORIZATION: basic $HEADER" push origin HEAD:gh-pages
+  deploy:
+    needs: [render, archive]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Confirm Pages source configuration
+        uses: actions/configure-pages@v5
+      - name: Deploy validated dashboard
+        id: deployment
+        uses: actions/deploy-pages@v4
