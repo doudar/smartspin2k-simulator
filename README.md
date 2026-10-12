@@ -165,3 +165,8 @@ The source project is licensed under GNU GPL version 2. Its license is preserved
 in `LICENSE`; this derived package uses the same GPL-2.0 license. Profile parameters
 are fitted/effective model assumptions and must not be represented as independent
 measurements of every operating condition.
+
+## Real-bike evidence
+
+See the [ride capture procedure](docs/capture-procedure.md) for existing-firmware
+serial/UDP/web recording, provenance, privacy, and independent holdout data.
