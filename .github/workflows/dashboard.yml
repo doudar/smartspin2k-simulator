@@ -31,7 +31,7 @@ jobs:
       - name: Restore immutable history as data only
         run: |
           mkdir -p history
-          if git fetch origin gh-pages:refs/remotes/origin/gh-pages; then
+          if git fetch origin gh-pages:refs/remotes/origin/gh-pages && git cat-file -e origin/gh-pages:runs; then
             git archive origin/gh-pages runs | tar -x -C history
             mv history/runs/* history/
             rmdir history/runs
