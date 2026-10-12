@@ -124,6 +124,11 @@ def build(history,output):
             shutil.copyfile(run/name,target/name)
         entries.append({'id':run.name,'metadata':data['metadata'],'status':data['comparison']['status'],'pairs':len(data['comparison'].get('runs',[]))})
     for name in ('index.html','app.js','style.css'): shutil.copyfile(Path(__file__).parent/name,output/name)
+    template=(output/'index.html').read_text()
+    for asset in ('app.js','style.css'):
+        version=hashlib.sha256((output/asset).read_bytes()).hexdigest()[:16]
+        template=template.replace('"'+asset+'"','"'+asset+'?v='+version+'"')
+    (output/'index.html').write_text(template)
     (output/'history.json').write_text(json.dumps(entries))
     (output/'.nojekyll').touch()
 
