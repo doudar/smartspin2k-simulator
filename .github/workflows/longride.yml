@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/longride.yml', 'ss2k_sim/longride.py']
+    paths: ['.github/workflows/longride.yml', 'ss2k_sim/longride.py', 'dashboard/longride_experiment.py']
 permissions:
   contents: read
 jobs:
@@ -54,4 +54,4 @@ jobs:
         run: |
           echo '## Continuous long-ride learning evidence' >> "$GITHUB_STEP_SUMMARY"
           echo '[Dashboard](https://doudar.github.io/smartspin2k-simulator/) · [Raw artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})' >> "$GITHUB_STEP_SUMMARY"
-          echo '30/60/90min × empty/partial/fully learned tested range × seed27, paired against26.10.1. Full means25 measured150–270W/75–95rpm cells, not all300firmware cells. Whole-ride AND early/middle/late plant/sensor quality checks determine the result. Failed/incomplete experiments remain visible; shared training evidence is linked once. Full-rate raw artifacts expire after90days in Actions; retained Pages archives follow repository history policy.' >> "$GITHUB_STEP_SUMMARY"
+          echo '30/60/90min × empty/partial/fully learned tested range × seed7, paired against26.10.1. Full means25 measured150–270W/75–95rpm cells, not all300firmware cells. Whole-ride AND early/middle/late plant/sensor quality checks determine the result. Failed/incomplete experiments remain visible; shared training evidence is linked once. Full-rate raw artifacts expire after90days in Actions; retained Pages archives follow repository history policy.' >> "$GITHUB_STEP_SUMMARY"

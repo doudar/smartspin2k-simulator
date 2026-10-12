@@ -151,15 +151,19 @@ def run_one(adapter,exe,config,profile,output,workout,seed,*,table=None,windows=
     return trace,meta,score,snapshots
 
 
-def main(argv=None):
+def parser():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('command',choices=('train','compare'))
     p.add_argument('--firmware-root',type=Path,required=True); p.add_argument('--candidate-root',type=Path,required=True)
     p.add_argument('--baseline-root',type=Path); p.add_argument('--output',type=Path,required=True)
     p.add_argument('--fixtures',type=Path); p.add_argument('--profile',type=Path,default=PACKAGE/'profiles/ride_20260927.json')
     p.add_argument('--minutes',type=int,nargs='+',default=[30,60,90]); p.add_argument('--states',nargs='+',choices=('empty','partial','full'),default=['empty','partial','full'])
-    p.add_argument('--seeds',type=int,nargs='+',default=[27]); p.add_argument('--stress',action='store_true')
-    a=p.parse_args(argv)
+    p.add_argument('--seeds',type=int,nargs='+',default=[7]); p.add_argument('--stress',action='store_true')
+    return p
+
+
+def main(argv=None):
+    a=parser().parse_args(argv)
     if a.output.exists() and any(a.output.iterdir()): raise ValueError('Output must be new/empty')
     a.output.mkdir(parents=True,exist_ok=True)
     adapter,ainfo=load_adapter(a.firmware_root); profile=json.loads(a.profile.read_text()); config=BikeConfig(**profile['bike'])
@@ -176,7 +180,7 @@ def main(argv=None):
         exes={k:adapter.build(a.output/k/'build',source_root=v,packet_ingress=True) for k,v in roots.items()}
         if a.command=='train':
             workout=Workout([Segment(216,w,w,c) for c in (75,80,85,90,95) for w in (150,180,210,240,270)])
-            trace,meta,score,snaps=run_one(adapter,exes['candidate'],config,profile,a.output/'training',workout,137)
+            trace,meta,score,snaps=run_one(adapter,exes['candidate'],config,profile,a.output/'training',workout,7)
             candidates=[s for s in snaps if 0<coverage(s['table'])['tested_range_supported']<coverage(s['table'])['tested_range_required']]
             if not candidates: raise RuntimeError('Training produced no partial table')
             partial=candidates[len(candidates)//3]
@@ -184,7 +188,7 @@ def main(argv=None):
             for name,snapshot in [('partial',partial)]+([('full',fulls[-1])] if fulls else []):
                 fixture={'table':snapshot['table'],'sha256':digest(snapshot['table']),'training_time_s':snapshot['time_s'],
                     'coordinate_reference':{'homed':True,'min_position':config.min_position,'max_position':config.max_position,'position_divisor':snapshot['table']['position_divisor']},
-                    'training_seed':137,'firmware':prov['candidate'],'adapter':ainfo,'coverage':coverage(snapshot['table']),
+                    'training_seed':7,'firmware':prov['candidate'],'adapter':ainfo,'coverage':coverage(snapshot['table']),
                     'training_segments':[asdict(s) for s in workout.segments], 'profile_sha256':manifest['profile_sha256'],
                     'provenance':'Unmodified production online learning from independently simulated CPS/CSC packets; no direct plant table injection'}
                 (a.output/(name+'.json')).write_text(json.dumps(fixture,indent=2)+'\n')

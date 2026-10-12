@@ -73,9 +73,11 @@ python -m ss2k_sim compare \
 Default baseline: `082d1ee26ddb009d5132547087f77be03d1b0ab7`.
 An intentional baseline change requires `--baseline-sha EXACT_COMMIT`.
 `--adapter-sha256 HASH` optionally enforces the fingerprint printed by
-`check-adapter`. Select a diagnostic subset using `--scenario steps --seeds 27`.
+`check-adapter`. Select a diagnostic subset using `--scenario steps --seeds 7`.
 The full default matrix covers steps, ramps, cadence changes, differing power and
-cadence sample rates, latency, jitter and outages, across three seeded runs.
+cadence sample rates, latency, jitter and outages, with fixed seed 7. Published comparisons and fixture training use seed 7;
+explicit CLI seed overrides remain available for diagnostics, and historical
+evidence retains its original provenance.
 
 A single revision can be inspected with `run`, the same arguments without
 `--baseline-root`. Single runs are explicitly unpaired and do not receive a

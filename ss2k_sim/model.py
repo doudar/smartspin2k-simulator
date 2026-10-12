@@ -156,7 +156,7 @@ class Bike:
     delay. A ride alone cannot uniquely separate those physical sources.
     Position and resistance are intentionally not sent back to the controller.
     """
-    def __init__(self, config, position, cadence=80, seed=1, initial_power=None):
+    def __init__(self, config, position, cadence=80, seed=7, initial_power=None):
         self.config = config
         self.position = max(config.min_position, min(config.max_position, position))
         self.filtered = equilibrium(config, self.position, cadence) if initial_power is None else initial_power
@@ -247,7 +247,7 @@ class Rider:
     Workout cadence cues affect the rider; workout watts never set bike power.
     Coefficients without direct ride identification remain exposed assumptions.
     """
-    def __init__(self, config=None, seed=1):
+    def __init__(self, config=None, seed=7):
         self.config = config or RiderConfig()
         self.random = random.Random(seed)
         self.cadence = self.config.preferred_cadence

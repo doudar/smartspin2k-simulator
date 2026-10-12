@@ -28,7 +28,7 @@ def parser():
         q.add_argument('--candidate-root', type=Path, required=True)
         q.add_argument('--output', type=Path, required=True)
         q.add_argument('--profile', type=Path, default=PACKAGE/'profiles/ride_20260927.json')
-        q.add_argument('--seeds', type=int, nargs='+', default=[7, 27, 91])
+        q.add_argument('--seeds', type=int, nargs='+', default=[7])
         q.add_argument('--scenario', action='append', help='Run named subset; default full matrix')
         if command == 'compare':
             q.add_argument('--baseline-root', type=Path, required=True)

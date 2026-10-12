@@ -18,7 +18,7 @@ python -m ss2k_sim.longride compare \
   --firmware-root ../firmware-adapter --candidate-root ../firmware-candidate \
   --baseline-root ../firmware-baseline --fixtures output/long-training \
   --output output/long-paired --minutes 30 60 90 \
-  --states empty partial full --seeds 27 --stress
+  --states empty partial full --seeds 7 --stress
 ```
 
 The adapter must expose `Bridge.load_power_table`. Baseline stays pinned to
@@ -35,7 +35,10 @@ sensor schedules, seed and immutable initial fixture are used for both builds.
   all 300 firmware cells, every possible cadence, or hardware behavior are known**.
 
 Fixture training is a separate 90-minute ride through unmodified production
-learning, using seed 137 and 216-second holds at those grid points. No table
+learning, using seed 7 and 216-second holds at those grid points.
+Training and timed rides now use the same seed 7 for repeatability. This is not
+independent multi-seed robustness coverage. Older evidence keeps its original
+seed and fixture provenance; it is never relabeled. No table
 cell is calculated from the physical model or inserted to manufacture coverage.
 If training does not earn complete coverage, the tool reports that and does not
 write a full fixture. Fixture hashes, training time, segments, seed, firmware,

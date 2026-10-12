@@ -17,7 +17,7 @@ from .sampling import SensorChannel, SensorSchedule
 UNLIMITED_START_GEAR = 8
 
 
-def run(workout, config, exe, output, *, seed=27, speed=0, tick_ms=20, sensitivity=5,
+def run(workout, config, exe, output, *, seed=7, speed=0, tick_ms=20, sensitivity=5,
         initial_position=7433, rider_config=None, cadence_trace=None, initial_power=None,
         rider_mode="planned", progress=None, sleep=time.sleep, monotonic=time.monotonic,
         homed=True, firmware_position=None, min_watts=50, max_watts=1000, shift_step=1000,

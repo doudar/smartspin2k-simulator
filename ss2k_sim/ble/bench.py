@@ -336,7 +336,7 @@ def parser():
     p.add_argument('--name', default='SS2K Bike Sim')
     p.add_argument('--baudrate', type=int, default=115200)
     p.add_argument('--ftp', type=float, default=250)
-    p.add_argument('--seed', type=int, default=27)
+    p.add_argument('--seed', type=int, default=7)
     for name, default in [('tick-s', .02), ('max-tick-lateness-s', .2), ('power-period-s', 1.),
             ('cadence-period-s', 1.), ('capture-stale-s', .5), ('max-pulse-rate', 50000.),
             ('pulse-scale', 1.), ('connect-timeout-s', 20.), ('subscribe-timeout-s', 60.),
