@@ -9,7 +9,8 @@ import os
 import tempfile
 from pathlib import Path
 
-from build import SAFE, build, materialize, read_json, valid_tree, validate_metadata
+from build import (MAX_FILE, SAFE, build, collect, materialize, read_json, valid_tree,
+                   validate, validate_evidence_location, validate_metadata)
 from longride_import import prepare
 
 MAX_REVISION_GROUPS = 4
@@ -74,9 +75,10 @@ def cache_metadata(group):
         raise ValueError('Invalid cache provenance')
     if not isinstance(value.get('cache_key'), str):
         raise ValueError('Invalid cache key')
-    source = value.get('source_run_id')
-    if source is not None and (not isinstance(source, str) or not source.isdigit()):
-        raise ValueError('Invalid cache source run')
+    for field in ('source_run_id', 'source_attempt'):
+        source = value.get(field)
+        if source is not None and (not isinstance(source, str) or not source.isdigit()):
+            raise ValueError('Invalid cache source identity')
     return value
 
 
@@ -185,9 +187,104 @@ def import_metadata(source, base_metadata, cache):
     return metadata
 
 
+# Import-time decoration is not execution evidence. All other metadata, the full
+# comparison (including firmware/configuration and case identity), and every raw
+# evidence file must match before a cached import can reference an older record.
+IMPORT_METADATA = {'cache', 'ingestion', 'imported_at', 'notes', 'training_run_id',
+                   'workflow_url', 'workflow_conclusion', 'workflow_updated_at'}
+
+
+def cache_fingerprint(metadata, comparison, checksums):
+    cache = metadata.get('cache', {})
+    if not isinstance(cache, dict) or type(cache.get('reused')) is not bool:
+        return None
+    origin = tuple(cache.get(field) for field in ('cache_key', 'source_run_id', 'source_attempt'))
+    if not all(isinstance(value, str) and value for value in origin):
+        return None
+    if not all(value.isdigit() for value in origin[1:]):
+        return None
+    validate(comparison)
+    if comparison['status'] != 'complete' or comparison.get('batch_status', 'complete') != 'complete':
+        return None
+    training = metadata.get('evidence_only') is True
+    if training:
+        fixture = comparison.get('training')
+        if not isinstance(fixture, dict) or fixture.get('full_fixture_created') is not True:
+            return None
+    elif type(comparison.get('passed')) is not bool or not comparison.get('runs'):
+        return None
+    # A role is independent of the importing Actions run ID. Full comparisons
+    # also distinguish scenario, seed, duration, initial state and sensitivity.
+    role = 'training' if training else comparison.get('experiment', 'short')
+    provenance = {key: value for key, value in metadata.items() if key not in IMPORT_METADATA}
+    files = {name: digest for name, digest in checksums.items() if name != 'run-metadata.json'}
+    payload = [origin, role, provenance, comparison, files]
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, allow_nan=False).encode()).hexdigest()
+
+
+def archived_cache_records(history):
+    """Index only verified complete records; never modify existing archives."""
+    result = {}
+    for record in sorted(history.iterdir()) if history.exists() else []:
+        try:
+            if not record.is_dir() or not SAFE.fullmatch(record.name):
+                continue
+            check_root(record)
+            data = read_json(record / 'data.json')
+            valid_tree(data)
+            if data['id'] != record.name:
+                continue
+            metadata = validate_metadata(data['metadata'])
+            sums = record / 'SHA256SUMS.txt'
+            if sums.is_symlink() or sums.stat().st_size > MAX_FILE:
+                continue
+            checksums = {}
+            for line in sums.read_text().splitlines():
+                digest, separator, name = line.partition('  ')
+                if (not separator or len(digest) != 64 or
+                        any(char not in '0123456789abcdef' for char in digest) or
+                        not name or name in checksums or
+                        any(not SAFE.fullmatch(part) for part in name.split('/'))):
+                    raise ValueError('Invalid archived evidence checksums')
+                checksums[name] = digest
+            archive = record / 'evidence.zip'
+            if 'comparison.json' not in checksums or archive.is_symlink():
+                continue
+            pointer = record / 'evidence-location.json'
+            if present(pointer):
+                validate_evidence_location(read_json(pointer), record.name)
+            elif not archive.is_file():
+                continue
+            training_id = metadata.get('training_run_id')
+            if training_id and (not SAFE.fullmatch(training_id) or
+                                not (history / training_id / 'data.json').is_file()):
+                continue
+            fingerprint = cache_fingerprint(metadata, data['comparison'], checksums)
+            if fingerprint:
+                result.setdefault(fingerprint, record.name)
+        except ERRORS:
+            # A malformed old record cannot suppress new evidence. The normal
+            # dashboard build still validates and reports any damaged history.
+            continue
+    return result
+
+
+def cached_record(source, metadata, archived):
+    if not metadata.get('cache', {}).get('reused') or not archived:
+        return None
+    files = collect(source)
+    if 'comparison.json' not in files:
+        return None
+    comparison = json.loads(files['comparison.json'])
+    checksums = {name: hashlib.sha256(data).hexdigest() for name, data in files.items()}
+    return archived.get(cache_fingerprint(metadata, comparison, checksums))
+
+
 def ingest(root, history, identity, base_metadata):
     if not SAFE.fullmatch(identity):
         raise ValueError('Invalid workflow identity')
+    archived = archived_cache_records(history)
+    training_aliases = {}
     with tempfile.TemporaryDirectory(prefix='longride-evidence-') as temporary:
         stage = Path(temporary)
         try:
@@ -205,6 +302,21 @@ def ingest(root, history, identity, base_metadata):
             try:
                 check_root(source)
                 metadata = import_metadata(source, base_metadata, cache)
+                original = cached_record(source, metadata, archived)
+                if original:
+                    if metadata.get('evidence_only') is True:
+                        training_aliases[rid] = original
+                    continue
+                training_id = metadata.get('training_run_id')
+                if training_id in training_aliases:
+                    metadata['training_run_id'] = training_aliases[training_id]
+                    # Only prepared, generated metadata may be rewritten; raw
+                    # input and all previously archived evidence stay immutable.
+                    if stage in source.parents:
+                        path = source / 'run-metadata.json'
+                        prepared_metadata = validate_metadata(read_json(path))
+                        prepared_metadata['training_run_id'] = metadata['training_run_id']
+                        path.write_text(json.dumps(prepared_metadata, allow_nan=False))
                 materialize(source, history / rid, rid, metadata)
             except ERRORS as exc:
                 safe = rejected(stage / 'rejected', str(index), f'Evidence validation rejected this payload: {type(exc).__name__}. Raw payload was not published.', available_metadata(source))

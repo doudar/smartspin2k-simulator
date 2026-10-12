@@ -1,5 +1,6 @@
 """Artifact layout, provenance, and trust-boundary regression coverage."""
 import copy
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -12,7 +13,7 @@ import zipfile
 
 DASHBOARD = Path(__file__).resolve().parents[1] / 'dashboard'
 sys.path.insert(0, str(DASHBOARD))
-from build import SAFE, build
+from build import CADENCE_RENDERER, MOTOR_RENDERER, SAFE, build
 from ingest import MAX_RECORDS, SPRINT_CASES, ingest
 from longride_import import copy_inert
 
@@ -164,6 +165,185 @@ class MultiRevisionIngestTests(unittest.TestCase):
         self.assertEqual(long['workflow_url'], 'https://github.com/doudar/smartspin2k-simulator/actions/runs/99')
         self.assertEqual(long['run_completed_at'], '2026-10-11T12:20:00Z')
         self.assertNotIn('workflow_updated_at', long)
+
+    def cache_state(self, group, reused=False, **changes):
+        value = {'reused': reused, 'cache_key': 'exact-engine-baseline-candidate-suite-v1',
+                 'source_run_id': '123', 'source_attempt': '2', **changes}
+        self.write(group / 'cache-state.json', value)
+
+    def next_import(self, identity='actions-456-1'):
+        self.identity = identity
+        self.base = {**self.base, 'workflow_url':
+                     'https://github.com/doudar/smartspin2k-simulator/actions/runs/' + identity.split('-')[1]}
+        return self.run_ingest()
+
+    def test_repeated_cache_hits_keep_original_archives_and_urls_unchanged(self):
+        self.plan([self.names[0]])
+        group = self.revision(self.names[0])
+        self.cache_state(group)
+        originals = self.run_ingest()
+        snapshot = {p.relative_to(self.history): p.read_bytes()
+                    for p in self.history.rglob('*') if p.is_file()}
+        self.cache_state(group, reused=True)
+        for identity in ('actions-456-1', 'actions-789-3'):
+            records = self.next_import(identity)
+            self.assertEqual(records, originals)
+            self.assertEqual(snapshot, {p.relative_to(self.history): p.read_bytes()
+                                       for p in self.history.rglob('*') if p.is_file()})
+        self.assertEqual(len(json.loads((self.root / 'site/history.json').read_text())), 7)
+
+    def offload_record(self, rid):
+        record = self.history / rid
+        archive = record / 'evidence.zip'
+        digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+        pointer = {'schema_version': 1,
+                   'url': 'https://github.com/doudar/smartspin2k-simulator/releases/download/'
+                          f'evidence-123-2/{rid}-{digest}.zip',
+                   'sha256': digest, 'size': archive.stat().st_size, 'asset_id': 12345}
+        self.write(record / 'evidence-location.json', pointer)
+        for filename, renderer in (('motor-display.json', MOTOR_RENDERER),
+                                   ('cadence-display.json', CADENCE_RENDERER)):
+            shutil.copyfile(self.root / 'site' / renderer / (rid + '.json'), record / filename)
+        archive.unlink()
+        return pointer
+
+    def test_repeated_cache_hits_deduplicate_valid_offloaded_archives(self):
+        self.plan([self.names[0]])
+        group = self.revision(self.names[0])
+        self.cache_state(group)
+        originals = self.run_ingest()
+        for rid in originals:
+            self.offload_record(rid)
+        snapshot = {p.relative_to(self.history): p.read_bytes()
+                    for p in self.history.rglob('*') if p.is_file()}
+        self.cache_state(group, reused=True)
+        self.assertEqual(self.next_import(), originals)
+        self.assertEqual(snapshot, {p.relative_to(self.history): p.read_bytes()
+                                   for p in self.history.rglob('*') if p.is_file()})
+        self.assertFalse(list(self.history.rglob('evidence.zip')))
+
+    def test_invalid_offloaded_archive_pointer_cannot_suppress_new_evidence(self):
+        self.plan([self.names[0]])
+        group = self.revision(self.names[0])
+        self.cache_state(group)
+        originals = self.run_ingest()
+        short = self.identity + '-' + self.names[0] + '-short'
+        pointer = self.offload_record(short)
+        pointer['url'] = pointer['url'].replace('github.com/', 'example.com/')
+        self.write(self.history / short / 'evidence-location.json', pointer)
+        self.cache_state(group, reused=True)
+        self.identity = 'actions-456-1'
+        ingest(self.input, self.history, self.identity, self.base)
+        records = {p.name: json.loads((p / 'data.json').read_text()) for p in self.history.iterdir()}
+        self.assertEqual(len(records), len(originals) + 1)
+        self.assertIn(self.identity + '-' + self.names[0] + '-short', records)
+        with self.assertRaisesRegex(ValueError, 'Invalid evidence release URL'):
+            build(self.history, self.root / 'site')
+
+    def test_first_seen_cached_evidence_is_archived_once(self):
+        self.plan([self.names[0]])
+        group = self.revision(self.names[0])
+        self.cache_state(group, reused=True, source_run_id='99')
+        originals = self.run_ingest()
+        self.assertEqual(len(originals), 8)
+        self.assertEqual(self.next_import(), originals)
+
+    def test_different_cache_keys_or_original_execution_cannot_deduplicate(self):
+        for change in ({'cache_key': 'new-baseline-exact-key'}, {'source_run_id': '124'},
+                       {'source_attempt': '3'}, {'source_attempt': None}):
+            with self.subTest(change=change):
+                self.history = self.root / ('history-' + str(len(list(self.root.glob('history-*')))))
+                self.identity = 'actions-123-2'
+                self.plan([self.names[0]])
+                group = self.revision(self.names[0])
+                self.cache_state(group)
+                self.assertEqual(len(self.run_ingest()), 8)
+                self.cache_state(group, reused=True, **change)
+                self.assertEqual(len(self.next_import()), 16)
+
+    def test_cached_case_provenance_and_raw_bytes_must_match(self):
+        changes = ('scenario', 'seed', 'initial_state', 'sensitivity', 'baseline', 'configuration',
+                   'metadata', 'raw_trace')
+        for change in changes:
+            with self.subTest(change=change):
+                self.history = self.root / ('history-' + change)
+                self.identity = 'actions-123-2'
+                self.plan([self.names[0]])
+                group = self.revision(self.names[0])
+                trace = group / 'short/baseline/steps-7/trace.csv'
+                trace.parent.mkdir(parents=True, exist_ok=True)
+                trace.write_text('time_s,target_w,power_w\n0,100,99\n')
+                self.cache_state(group)
+                self.run_ingest()
+                self.cache_state(group, reused=True)
+                path = group / 'short/comparison.json'
+                comparison = json.loads(path.read_text())
+                if change in ('scenario', 'seed', 'initial_state', 'sensitivity'):
+                    comparison['runs'][0][change] = {'scenario': 'ramp', 'seed': 8,
+                                                   'initial_state': 'full', 'sensitivity': 5}[change]
+                elif change == 'baseline':
+                    comparison['firmware'] = {'baseline': {'commit': 'new-baseline'}}
+                elif change == 'configuration':
+                    comparison['package_config_sha256'] = 'new-configuration'
+                elif change == 'metadata':
+                    meta_path = group / 'short/run-metadata.json'
+                    self.write(meta_path, {**json.loads(meta_path.read_text()), 'candidate_ref': 'different-ref'})
+                elif change == 'raw_trace':
+                    trace.write_text('time_s,target_w,power_w\n0,100,95\n')
+                self.write(path, comparison)
+                records = self.next_import()
+                self.assertEqual(len(records), 9)
+                self.assertIn(self.identity + '-' + self.names[0] + '-short', records)
+
+    def test_failed_or_incomplete_cached_evidence_is_never_suppressed(self):
+        for status, passed in (('failed', False), ('incomplete', False), ('unsupported', False)):
+            with self.subTest(status=status):
+                self.history = self.root / ('history-' + status)
+                self.identity = 'actions-123-2'
+                self.plan([self.names[0]])
+                group = self.revision(self.names[0])
+                path = group / 'short/comparison.json'
+                self.write(path, {**json.loads(path.read_text()), 'status': status, 'passed': passed})
+                self.cache_state(group)
+                self.run_ingest()
+                self.cache_state(group, reused=True)
+                records = self.next_import()
+                self.assertEqual(len(records), 9)
+                self.assertEqual(records[self.identity + '-' + self.names[0] + '-short']['comparison']['status'], status)
+
+    def test_complete_measured_quality_failure_reuses_original_evidence(self):
+        self.plan([self.names[0]])
+        group = self.revision(self.names[0])
+        path = group / 'short/comparison.json'
+        comparison = json.loads(path.read_text())
+        comparison['passed'] = False
+        comparison['runs'][0].update(passed=False, absolute_passed=False,
+                                     failures=['Provisional absolute band exceeded'])
+        self.write(path, comparison)
+        self.cache_state(group)
+        original = self.run_ingest()
+        self.cache_state(group, reused=True)
+        records = self.next_import()
+        self.assertEqual(set(records), set(original))
+        self.assertTrue(any(r['comparison'].get('passed') is False for r in records.values()))
+
+    def test_partial_cache_coverage_reuses_training_for_new_cases(self):
+        self.plan([self.names[0]])
+        group = self.revision(self.names[0])
+        self.cache_state(group)
+        originals = self.run_ingest()
+        training = next(rid for rid in originals if rid.endswith('-training'))
+        missing = self.identity + '-' + self.names[0] + '-long-90m-full-sensitivity10-7'
+        shutil.rmtree(self.history / missing)
+        self.cache_state(group, reused=True)
+        records = self.next_import()
+        new_case = self.identity + '-' + self.names[0] + '-long-90m-full-sensitivity10-7'
+        self.assertEqual(len(records), 8)
+        self.assertEqual(records[new_case]['metadata']['training_run_id'], training)
+        self.assertNotIn(self.identity + '-' + self.names[0] + '-training', records)
+        self.assertEqual(records[training], originals[training])
+        with zipfile.ZipFile(self.history / new_case / 'evidence.zip') as archive:
+            self.assertEqual(json.loads(archive.read('run-metadata.json'))['training_run_id'], training)
 
     def test_inert_root_files_and_unplanned_directories_are_ignored(self):
         self.plan([self.names[0]])

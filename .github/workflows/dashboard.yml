@@ -77,9 +77,6 @@ jobs:
           path: site
           include-hidden-files: true
           retention-days: 90
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
       - name: Actions summary
         env:
           SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
@@ -93,11 +90,34 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: trusted
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - uses: actions/download-artifact@v4
         with:
           name: trusted-dashboard
           path: site
-      # This job executes only this fixed workflow, never files from the artifact.
+      # Scripts come exclusively from trusted main, never the rendered artifact.
+      - name: Catalog previously archived immutable records
+        run: |
+          git -C trusted fetch origin gh-pages:refs/remotes/origin/gh-pages
+          python - <<'PY'
+          import json,subprocess
+          names=subprocess.check_output(['git','-C','trusted','ls-tree','--name-only','origin/gh-pages:runs'],text=True).splitlines()
+          json.dump(names,open('existing-records.json','w'))
+          PY
+      - name: Retain new raw evidence in verified public Release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python trusted/dashboard/offload_evidence.py --site site --existing existing-records.json
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
       - name: Append rendered run history
         env:
           GH_TOKEN: ${{ github.token }}

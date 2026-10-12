@@ -15,3 +15,5 @@ jobs:
       - run: python -m ss2k_sim --help
       - run: node tests/test_dashboard_ui.cjs
       - run: node tests/test_dashboard_hover.cjs
+
+      - run: node tests/test_external_evidence_ui.cjs

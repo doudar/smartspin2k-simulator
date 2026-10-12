@@ -84,3 +84,38 @@ The adapter commit in compatibility provenance is deliberately reviewed and pinn
 that executable trust anchor is distinct from automatically selected firmware
 candidates/releases. New incompatible releases fail explicitly and may require an
 adapter update; they are never silently skipped or replaced with synthetic results.
+
+## Durable evidence storage and size protection
+
+New validated raw ZIPs are uploaded by the trusted publisher to public GitHub
+Release assets in this simulator repository. Each content-addressed filename
+includes the run ID and ZIP SHA-256. The publisher re-fetches the asset and verifies
+its server SHA-256 digest, byte count, uploaded state, and exact public download URL
+before replacing the new local ZIP with an evidence-location pointer. It never
+replaces a Release asset or removes an existing immutable Pages record. Releases
+are marked as evidence prereleases, not firmware releases. Publication uses the
+existing repository-scoped Actions token; no new persistent credential or external
+storage service is required. Failed verification retains the ZIP and stops publish.
+
+Pages keeps interactive summaries, display traces, comparison JSON, checksums, and
+verified download links. Training downloads use the same verified index. Future
+renders reuse validated local display snapshots and do not download or execute
+Release artifacts. Release assets have no Actions-style expiration. GitHub currently
+allows 1,000 assets per release and less than 2 GiB per asset; each run uses its own
+release, with at most 40 bounded records. See [GitHub release limits](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases).
+
+Cached unchanged histories are deduplicated against complete retained records using
+the full cache identity, original run/attempt, firmware/model/case provenance, and
+raw-file checksums. Complete measurements retain their original record and URL
+even when a provisional quality band failed; errored or incomplete executions do
+not suppress new evidence. New or changed evidence
+is never silently deduplicated. A partially imported batch retains valid links to
+its original shared training record.
+
+The verified pre-migration Pages snapshot was 571,652,364 bytes, of which 543,035,550
+bytes were ZIPs. Those old records remain untouched. New evidence avoids that raw
+ZIP growth: the latest six-long batch's summaries/plots were about 2.45 MB, versus
+hundreds of MB of raw input. The publisher fails safely above a 900 MB Pages package,
+before [GitHub's 1 GB site limit](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits),
+leaving the prior live dashboard intact and verified Release assets retained. This
+is a guard against eventual summary growth, not permission to delete old history.

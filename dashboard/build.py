@@ -116,6 +116,62 @@ def chart(raw,*,preserve_extrema=False):
 # Versioned, reproducible display data lives outside immutable evidence runs.
 MOTOR_RENDERER = 'motor-v1'
 CADENCE_RENDERER = 'cadence-v1'
+EVIDENCE_RELEASE_ROOT = 'https://github.com/doudar/smartspin2k-simulator/releases/download/'
+MAX_EVIDENCE_ZIP = 2 * 1024 * 1024 * 1024 - 1
+MAX_SAFE_INTEGER = 9007199254740991
+
+def validate_evidence_location(location,run_id=None):
+    """Accept only the publisher's content-addressed asset in this repository."""
+    valid_tree(location)
+    if not isinstance(location,dict) or set(location)!={'schema_version','url','sha256','size','asset_id'}:
+        raise ValueError('Invalid evidence location fields')
+    if type(location['schema_version']) is not int or location['schema_version']!=1:
+        raise ValueError('Invalid evidence location version')
+    digest=location['sha256']
+    if not isinstance(digest,str) or not re.fullmatch(r'[0-9a-f]{64}',digest):
+        raise ValueError('Invalid evidence SHA-256')
+    for field,limit in (('size',MAX_EVIDENCE_ZIP),('asset_id',MAX_SAFE_INTEGER)):
+        if type(location[field]) is not int or not 0<location[field]<=limit:
+            raise ValueError('Invalid evidence '+field)
+    if run_id is not None and (not isinstance(run_id,str) or not SAFE.fullmatch(run_id)): raise ValueError('Invalid evidence run id')
+    pattern=re.escape(EVIDENCE_RELEASE_ROOT)+r'evidence-[1-9][0-9]{0,19}-[1-9][0-9]{0,8}/([a-zA-Z0-9][a-zA-Z0-9_.-]{0,100})-'+digest+r'\.zip'
+    match=re.fullmatch(pattern,location['url']) if isinstance(location['url'],str) else None
+    if not match or run_id is not None and match[1]!=run_id:
+        raise ValueError('Invalid evidence release URL')
+    return location
+
+def validate_display(display,data,renderer):
+    """Validate bounded persisted presentation data without reopening remote ZIPs."""
+    valid_tree(display)
+    if renderer not in (MOTOR_RENDERER,CADENCE_RENDERER): raise ValueError('Unknown display renderer')
+    cadence=renderer==CADENCE_RENDERER
+    expected={'source_field':'cadence_rpm' if cadence else 'motor_steps',
+              'units':'rpm' if cadence else 'steps','renderer':renderer}
+    if cadence: expected['received_source_field']=None
+    if not isinstance(display,dict) or set(display)-set(expected)-{'traces','status'}:
+        raise ValueError('Invalid display fields')
+    if any(key not in display or display[key]!=value for key,value in expected.items()):
+        raise ValueError('Invalid display provenance')
+    traces=display.get('traces')
+    if not isinstance(traces,dict): raise ValueError('Invalid display traces')
+    if 'status' in display and (display['status']!='unavailable' or traces):
+        raise ValueError('Invalid display status')
+    keys={f"{row['scenario']}-{row['seed']}" for row in data['comparison'].get('runs',[])}
+    if set(traces)-keys: raise ValueError('Unknown display trace')
+    for rows in traces.values():
+        if not isinstance(rows,list) or len(rows)>1801: raise ValueError('Oversized display trace')
+        previous=None
+        for row in rows:
+            if not isinstance(row,list) or len(row)!=(3 if cadence else 2): raise ValueError('Invalid display row')
+            for column,value in enumerate(row):
+                if column and value is None: continue
+                if type(value) not in (int,float) or abs(value)>=1e9 or not math.isfinite(value):
+                    raise ValueError('Invalid display number')
+                if cadence and value<0: raise ValueError('Invalid cadence display number')
+            if previous is not None and row[0]<=previous: raise ValueError('Nonmonotonic display time')
+            previous=row[0]
+            if cadence and row[2] is not None: raise ValueError('Unrecorded received cadence')
+    return display
 
 def motor_chart(raw,*,preserve_extrema=False):
     rows=[]
@@ -229,23 +285,36 @@ def materialize(source, dest, run_id, metadata):
 
 def build(history,output):
     output.mkdir(parents=True,exist_ok=True)
-    entries=[]
+    entries=[]; evidence_index={}
     for run in sorted(history.iterdir()) if history.exists() else []:
         if run.name == '.gitkeep': continue
         if not run.is_dir() or not SAFE.fullmatch(run.name): raise ValueError('Unsafe history directory')
         data=read_json(run/'data.json'); validate(data['comparison']); valid_tree(data); validate_metadata(data['metadata'])
         if data['id']!=run.name: raise ValueError('History id mismatch')
+        optional=('evidence-location.json','motor-display.json','cadence-display.json')
+        for name in ('evidence.zip',*optional):
+            if (run/name).is_symlink(): raise ValueError('Symlink in evidence record')
+        location=validate_evidence_location(read_json(run/'evidence-location.json'),run.name) if (run/'evidence-location.json').exists() else None
+        local_zip=(run/'evidence.zip').is_file()
+        if not local_zip and location is None: raise ValueError('Missing local or external evidence: '+run.name)
+        persisted={}
+        for name,renderer in (('motor-display.json',MOTOR_RENDERER),('cadence-display.json',CADENCE_RENDERER)):
+            if (run/name).exists(): persisted[renderer]=validate_display(read_json(run/name),data,renderer)
+            elif not local_zip: raise ValueError('Missing persisted display: '+name)
+        if location: evidence_index[run.name]=location['url']
         target=output/'runs'/run.name; target.mkdir(parents=True,exist_ok=True)
-        for name in ('data.json','comparison.json','SHA256SUMS.txt','evidence.zip'):
+        names=['data.json','comparison.json','SHA256SUMS.txt']+[name for name in ('evidence.zip',*optional) if (run/name).exists()]
+        for name in names:
             if (run/name).is_symlink(): raise ValueError('Symlink')
             shutil.copyfile(run/name,target/name)
+        if not local_zip and (target/'evidence.zip').exists(): (target/'evidence.zip').unlink()
         display=output/MOTOR_RENDERER; display.mkdir(exist_ok=True)
-        try: motor=motor_display(run,data)
+        try: motor=persisted[MOTOR_RENDERER] if MOTOR_RENDERER in persisted else motor_display(run,data)
         except (ValueError,KeyError,UnicodeError,zipfile.BadZipFile,csv.Error):
             motor={'source_field':'motor_steps','units':'steps','renderer':MOTOR_RENDERER,'traces':{},'status':'unavailable'}
         (display/(run.name+'.json')).write_text(json.dumps(motor,allow_nan=False,separators=(',',':')))
         cadence_dir=output/CADENCE_RENDERER; cadence_dir.mkdir(exist_ok=True)
-        try: cadence=cadence_display(run,data)
+        try: cadence=persisted[CADENCE_RENDERER] if CADENCE_RENDERER in persisted else cadence_display(run,data)
         except (ValueError,KeyError,UnicodeError,zipfile.BadZipFile,csv.Error):
             cadence={'source_field':'cadence_rpm','received_source_field':None,
                      'units':'rpm','renderer':CADENCE_RENDERER,'traces':{},'status':'unavailable'}
@@ -261,6 +330,7 @@ def build(history,output):
         template=template.replace('"'+asset+'"','"'+asset+'?v='+version+'"')
     (output/'index.html').write_text(template)
     (output/'history.json').write_text(json.dumps(entries))
+    (output/'evidence-index.json').write_text(json.dumps(evidence_index,sort_keys=True,separators=(',',':')))
     (output/'.nojekyll').touch()
 
 def main():
