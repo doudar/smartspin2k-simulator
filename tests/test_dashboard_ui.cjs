@@ -46,7 +46,7 @@ const tick=()=>new Promise(setImmediate);
 function harness(hash=''){
  const nodes=Object.fromEntries(ids.map(id=>[id,new Element(['firmware','test-type','duration','table','history','scenario','seed'].includes(id)?'select':'div')]));
  const pending=new Map(),requests=[];
- const ctx={document:{getElementById:id=>nodes[id],createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)},location:{hash},Intl,Date,console,fetch:async url=>{
+ const ctx={document:{events:{},addEventListener(event,handler){this.events[event]=handler;},getElementById:id=>nodes[id],createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)},location:{hash},Intl,Date,console,fetch:async url=>{
   requests.push(url);
   if(url.startsWith('history.json'))return {ok:true,json:async()=>history.slice()};
   if(pending.has(url))return pending.get(url).promise;
@@ -120,7 +120,7 @@ const cleared=(all=true)=>{assert.equal(nodes.chart.children.length,0);assert.ok
  pointer('pointerdown',227,{pointerType:'touch'});assert.equal(run('selection'),null); // normal touch scroll
  click('zoom-select');assert.equal(zn.chart['data-select-mode'],'true');pointer('pointerdown',227,{pointerType:'touch'});pointer('pointermove',713,{pointerType:'touch'});pointer('pointerup',713,{pointerType:'touch'});assert.deepEqual(range(),[1080,4320]);assert.equal(zn.chart['data-select-mode'],'false');
  click('zoom-select');pointer('pointerdown',227,{pointerType:'touch'});pointer('pointermove',713,{pointerId:2,pointerType:'touch',isPrimary:false});assert.equal(run('selection.last'),227);pointer('pointercancel',713,{pointerType:'touch'});assert.deepEqual(range(),[1080,4320]);
- click('zoom-select');pointer('pointerdown',227);zn.chart.events.keydown({key:'Escape'});assert.equal(run('selection'),null);assert.equal(zn.chart['data-select-mode'],'false');
+ click('zoom-select');pointer('pointerdown',227);z.ctx.document.events.keydown({key:'Escape'});assert.equal(run('selection'),null);assert.equal(zn.chart['data-select-mode'],'false');
  // Every sample shares the same time transform. No interpolation adds new samples.
  assert.equal(run('windowRows([[0,1],[1,2],[2,3],[3,4]],1.2,1.8).length'),2);
  click('zoom-reset');for(let i=0;i<20;i++)click('zoom-in');assert.equal(range()[1]-range()[0],1);assert.ok(zn['zoom-in'].disabled);

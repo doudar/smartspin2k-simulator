@@ -107,7 +107,7 @@ $('chart').addEventListener('pointermove',event=>{
 $('chart').addEventListener('pointerup',event=>selectionEnd(event));
 $('chart').addEventListener('pointercancel',event=>selectionEnd(event,true));
 $('chart').addEventListener('lostpointercapture',event=>selectionEnd(event,true));
-$('chart').addEventListener('keydown',event=>{if(event.key==='Escape'){cancelSelection();selectMode=false;updateZoomControls();}});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){cancelSelection();selectMode=false;updateZoomControls();}});
 $('zoom-select').addEventListener('click',()=>{cancelSelection();selectMode=!selectMode;updateZoomControls();});
 $('zoom-in').addEventListener('click',()=>changeZoom(.5));
 $('zoom-out').addEventListener('click',()=>changeZoom(2));
