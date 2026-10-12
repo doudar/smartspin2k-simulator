@@ -189,3 +189,10 @@ show their own nearest retained sample timestamps rather than interpolated value
 or claimed raw-resolution samples. Missing values remain unavailable. Tap outside
 or press Escape to dismiss. With the chart focused, Left/Right and Home/End inspect
 retained sample times. Changing the run, scenario, or window clears the readout.
+
+### Fixed comparison seed
+
+The dashboard uses seed 7 for every displayed test and has no seed selector.
+Charts, availability and summary counts are filtered to recorded seed-7 rows.
+Older evidence and other seeds remain in unchanged original downloads; they are
+never relabeled. Combinations without recorded seed-7 evidence show unavailable.
