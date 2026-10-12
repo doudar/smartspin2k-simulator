@@ -1,5 +1,5 @@
 """Security and immutable-history tests for the trusted Pages renderer."""
-import importlib.util,json,tempfile,unittest,zipfile
+import importlib.util,json,os,subprocess,sys,tempfile,unittest,zipfile
 from pathlib import Path
 SPEC=importlib.util.spec_from_file_location('dashboard_build',Path(__file__).resolve().parents[1]/'dashboard/build.py')
 m=importlib.util.module_from_spec(SPEC);SPEC.loader.exec_module(m)
@@ -30,6 +30,14 @@ class DashboardTests(unittest.TestCase):
     def test_nonfinite_rejected(self):
         self.payload['score']=float('nan');(self.source/'comparison.json').write_text(json.dumps(self.payload))
         with self.assertRaises(ValueError):m.materialize(self.source,self.dest,'run-1',{})
+    def test_invalid_metadata_date_rejected(self):
+        with self.assertRaises(ValueError):m.materialize(self.source,self.dest,'run-1',{'run_completed_at':{}})
+    def test_invalid_failure_list_rejected(self):
+        self.payload['runs'][0]['failures']={}
+        with self.assertRaises(ValueError):m.validate(self.payload)
+    def test_nonobject_row_rejected(self):
+        self.payload['runs']=[1]
+        with self.assertRaises(ValueError):m.validate(self.payload)
     def test_duplicate_scenario_rejected(self):
         self.payload['runs']*=2
         with self.assertRaises(ValueError):m.validate(self.payload)
@@ -39,6 +47,13 @@ class DashboardTests(unittest.TestCase):
     def test_chart_decimation_preserves_endpoints(self):
         data='time_s,target_w,power_w,latest_delivered_sensor_power_w\n'+''.join(f'{i},100,99,98\n'for i in range(4000))
         chart=m.chart(data.encode());self.assertLessEqual(len(chart),1801);self.assertEqual(chart[0][0],0);self.assertEqual(chart[-1][0],3999)
+    def test_invalid_metadata_becomes_incomplete(self):
+        (self.source/'run-metadata.json').write_text('{broken')
+        script=Path(__file__).resolve().parents[1]/'dashboard/ingest.py'
+        env={**os.environ,'EVENT_NAME':'workflow_run','SOURCE_RUN_ID':'123','SOURCE_ATTEMPT':'1'}
+        subprocess.run([sys.executable,str(script),'--input',str(self.source),'--history',str(self.history),'--output',str(self.root/'site')],env=env,check=True)
+        data=json.loads((self.history/'actions-123-1'/'comparison.json').read_text())
+        self.assertEqual(data['status'],'incomplete')
     def test_failed_manifest_retained(self):
         self.payload.update(status='failed',error='Adapter API unavailable');(self.source/'comparison.json').write_text(json.dumps(self.payload))
         m.materialize(self.source,self.dest,'run-1',{});self.assertEqual(json.loads((self.dest/'data.json').read_text())['comparison']['status'],'failed')

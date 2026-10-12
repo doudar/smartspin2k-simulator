@@ -49,14 +49,23 @@ def validate(manifest):
     if not isinstance(manifest,dict) or manifest.get('status') not in ('complete','failed','incomplete','unsupported'): raise ValueError('Invalid status')
     runs=manifest.get('runs',[])
     if not isinstance(runs,list) or len(runs)>500: raise ValueError('Invalid runs')
+    for key in ('error','coverage_level','budget_status','simulator_sha256','profile_sha256','package_config_sha256'):
+        if manifest.get(key) is not None and not isinstance(manifest[key],str): raise ValueError('Invalid manifest text')
+    firmware=manifest.get('firmware',{})
+    if not isinstance(firmware,dict) or any(not isinstance(v,dict) for v in firmware.values()): raise ValueError('Invalid firmware provenance')
     seen=set()
     for row in runs:
+        if not isinstance(row,dict): raise ValueError('Run must be an object')
         if not SAFE.fullmatch(row.get('scenario','')) or type(row.get('seed')) is not int: raise ValueError('Invalid scenario/seed')
         key=(row['scenario'],row['seed'])
         if key in seen: raise ValueError('Duplicate scenario/seed')
         seen.add(key)
-        for flag in ('passed','absolute_passed','relative_passed'):
-            if row.get(flag) is not None and type(row[flag]) is not bool: raise ValueError('Invalid decision')
+        for decision in (row,row.get('reported_power_comparison',{})):
+            if not isinstance(decision,dict): raise ValueError('Invalid decision object')
+            for flag in ('passed','absolute_passed','relative_passed'):
+                if decision.get(flag) is not None and type(decision[flag]) is not bool: raise ValueError('Invalid decision')
+            failures=decision.get('failures',[])
+            if not isinstance(failures,list) or any(not isinstance(f,str) for f in failures): raise ValueError('Invalid failures')
     return manifest
 
 def chart(raw):
@@ -70,13 +79,20 @@ def chart(raw):
     step=max(1,math.ceil(len(rows)/1800))
     return rows[::step]+([rows[-1]] if rows and (len(rows)-1)%step else [])
 
+def validate_metadata(metadata):
+    valid_tree(metadata)
+    if not isinstance(metadata,dict): raise ValueError('Metadata must be an object')
+    for key in ('run_started_at','run_completed_at','imported_at','release_tag','release_published_at','baseline_release_tag','baseline_release_published_at','adapter_commit','simulator_commit','notes','workflow_url','workflow_conclusion','workflow_updated_at'):
+        if metadata.get(key) is not None and not isinstance(metadata[key],str): raise ValueError('Invalid metadata text')
+    return metadata
+
 def materialize(source, dest, run_id, metadata):
     if not SAFE.fullmatch(run_id): raise ValueError('Invalid run id')
     if dest.exists(): raise ValueError('Immutable run already exists: '+run_id)
     files=collect(source)
     if 'comparison.json' not in files: files['comparison.json']=json.dumps({'status':'incomplete','passed':False,'runs':[],'error':'No comparison.json produced; inspect workflow log.'}).encode()
     manifest=validate(json.loads(files['comparison.json']))
-    valid_tree(metadata)
+    validate_metadata(metadata)
     dest.mkdir(parents=True)
     try:
         with zipfile.ZipFile(dest/'evidence.zip','w',zipfile.ZIP_DEFLATED) as z:
@@ -100,7 +116,7 @@ def build(history,output):
     for run in sorted(history.iterdir()) if history.exists() else []:
         if run.name == '.gitkeep': continue
         if not run.is_dir() or not SAFE.fullmatch(run.name): raise ValueError('Unsafe history directory')
-        data=read_json(run/'data.json'); validate(data['comparison']); valid_tree(data)
+        data=read_json(run/'data.json'); validate(data['comparison']); valid_tree(data); validate_metadata(data['metadata'])
         if data['id']!=run.name: raise ValueError('History id mismatch')
         target=output/'runs'/run.name; target.mkdir(parents=True,exist_ok=True)
         for name in ('data.json','comparison.json','SHA256SUMS.txt','evidence.zip'):

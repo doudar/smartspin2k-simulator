@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Workflow-event ingestion. Inputs affect data only, never a code checkout."""
-import argparse, datetime, json, os
+import argparse, datetime, hashlib, json, os
 from pathlib import Path
-from build import build, materialize, read_json, valid_tree
+from build import SAFE, build, materialize, read_json, valid_tree
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--history',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--input',type=Path,required=True);a=p.parse_args()
@@ -13,21 +13,25 @@ def main():
         if not (a.history/identity).exists():
             a.input.mkdir(parents=True,exist_ok=True)
             # One artifact may hold a bounded release matrix; each release gets its own immutable ID.
-            children=[p for p in a.input.iterdir() if p.is_dir() and (p/'comparison.json').is_file()]
+            children=[p for p in a.input.iterdir() if p.is_dir() and ((p/'comparison.json').is_file() or (p/'run-metadata.json').is_file())]
             sources=children if children and not (a.input/'comparison.json').exists() else [a.input]
             if len(sources)>10: raise ValueError('Historical batch too large')
             for source in sources:
-                rid=identity+('-'+source.name if source!=a.input else '')
+                suffix=source.name if SAFE.fullmatch(source.name) else hashlib.sha256(source.name.encode()).hexdigest()[:12]
+                rid=identity+('-'+suffix if source!=a.input else '')
                 if (a.history/rid).exists(): continue
-                metadata=read_json(source/'run-metadata.json') if (source/'run-metadata.json').exists() else {}
-                valid_tree(metadata)
-                if not isinstance(metadata,dict): metadata={'notes':'Producer metadata was not an object and was discarded.'}
-                metadata.update({'workflow_url':f'https://github.com/doudar/smartspin2k-simulator/actions/runs/{run_id}', 'workflow_conclusion':os.getenv('SOURCE_CONCLUSION'),'workflow_updated_at':os.getenv('SOURCE_DATE'),'imported_at':datetime.datetime.now(datetime.timezone.utc).isoformat()})
-                try: materialize(source,a.history/rid,rid,metadata)
-                except (ValueError,KeyError,TypeError,json.JSONDecodeError,UnicodeError) as e:
+                base_metadata={'workflow_url':f'https://github.com/doudar/smartspin2k-simulator/actions/runs/{run_id}', 'workflow_conclusion':os.getenv('SOURCE_CONCLUSION'),'workflow_updated_at':os.getenv('SOURCE_DATE'),'imported_at':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+                try:
+                    metadata=read_json(source/'run-metadata.json') if (source/'run-metadata.json').exists() else {}
+                    valid_tree(metadata)
+                    if not isinstance(metadata,dict): raise ValueError('Producer metadata must be an object')
+                    metadata.update(base_metadata)
+                    materialize(source,a.history/rid,rid,metadata)
+                except (ValueError,KeyError,TypeError,json.JSONDecodeError,UnicodeError,OSError) as e:
                     # Publish rejected/incomplete runs, but do not expose unsafe payloads.
                     safe=a.input.parent/('rejected-'+rid);safe.mkdir(exist_ok=True)
                     (safe/'comparison.json').write_text(json.dumps({'status':'incomplete','passed':False,'runs':[],'error':f'Evidence validation rejected this payload: {type(e).__name__}. Raw payload was not published.'}))
-                    materialize(safe,a.history/rid,rid,{'workflow_url':metadata['workflow_url'],'imported_at':metadata['imported_at'],'notes':'Original artifact remains available in Actions subject to retention.'})
+                    base_metadata['notes']='Original artifact remains available in Actions subject to retention.'
+                    materialize(safe,a.history/rid,rid,base_metadata)
     build(a.history,a.output)
 if __name__=='__main__':main()

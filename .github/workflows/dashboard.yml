@@ -12,6 +12,7 @@ permissions:
 concurrency:
   group: performance-dashboard
   cancel-in-progress: false
+  queue: max
 jobs:
   render:
     # Never check out a workflow_run head or execute experiment artifacts.
@@ -31,10 +32,16 @@ jobs:
       - name: Restore immutable history as data only
         run: |
           mkdir -p history
-          if git fetch origin gh-pages:refs/remotes/origin/gh-pages && git cat-file -e origin/gh-pages:runs; then
-            git archive origin/gh-pages runs | tar -x -C history
-            mv history/runs/* history/
-            rmdir history/runs
+          if git ls-remote --exit-code origin refs/heads/gh-pages >/dev/null; then
+            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+            if git cat-file -e origin/gh-pages:runs 2>/dev/null; then
+              git archive origin/gh-pages runs | tar -x -C history
+              mv history/runs/* history/
+              rmdir history/runs
+            fi
+          else
+            code=$?
+            [ "$code" -eq 2 ] || exit "$code"
           fi
           cp -rn dashboard/seed-history/. history/
       - name: Locate completed experiment artifact
@@ -107,6 +114,13 @@ jobs:
             git reset --soft FETCH_HEAD
           fi
           git -c core.hooksPath=/dev/null add .
+          if git rev-parse HEAD >/dev/null 2>&1; then
+            changes="$(git diff --cached --diff-filter=DM --name-only -- runs/)"
+            if [ -n "$changes" ]; then
+              echo "Refusing to delete or modify immutable prior run evidence: $changes"
+              exit 1
+            fi
+          fi
           git -c core.hooksPath=/dev/null commit -m "Archive dashboard run $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT" || true
           git -c core.hooksPath=/dev/null -c http.extraheader="AUTHORIZATION: basic $HEADER" push origin HEAD:gh-pages
   deploy:
