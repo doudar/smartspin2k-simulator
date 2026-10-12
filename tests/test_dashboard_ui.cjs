@@ -4,12 +4,15 @@ class Element {
   constructor(tag){this.tagName=tag;this.children=[];this.events={};this._text='';this._value='';this.disabled=false;}
   set textContent(t){this._text=String(t);this.children=[];}get textContent(){return this._text+this.children.map(x=>x.textContent).join('');}
   set value(v){this._value=String(v);}get value(){return this._value;}
-  append(...nodes){for(const n of nodes){this.children.push(n);if(this.tagName==='select'&&this.children.length===1)this.value=n.value;}}
+  append(...nodes){for(const n of nodes){n.parent=this;this.children.push(n);if(this.tagName==='select'&&this.children.length===1)this.value=n.value;}}
   replaceChildren(...nodes){this.children=[];this._text='';if(this.tagName==='select')this._value='';this.append(...nodes);}
   setAttribute(k,v){this[k]=v;}addEventListener(event,handler){this.events[event]=handler;}
+  remove(){if(this.parent)this.parent.children=this.parent.children.filter(n=>n!==this);}
+  setPointerCapture(id){this.capture=id;}hasPointerCapture(id){return this.capture===id;}releasePointerCapture(){this.capture=null;}
+  createSVGPoint(){return {x:0,y:0,matrixTransform(){return {x:this.x,y:this.y};}};}getScreenCTM(){return {inverse(){return {};}};}
   async change(v){this.value=v;await this.events.change?.();}
 }
-const ids=['firmware','test-type','duration','table','duration-filter','table-filter','history','scenario','seed','notice','overview','chart','chart-label','metrics','decisions','provenance','downloads','json','motor-note','learning','learning-label','learning-coverage','learning-metrics','learning-events','learning-evidence','learning-status','learning-hashes','learning-decisions','learning-grid'];
+const ids=['zoom-in','zoom-out','zoom-reset','zoom-earlier','zoom-later','zoom-select','zoom-range','firmware','test-type','duration','table','duration-filter','table-filter','history','scenario','seed','notice','overview','chart','chart-label','metrics','decisions','provenance','downloads','json','motor-note','learning','learning-label','learning-coverage','learning-metrics','learning-events','learning-evidence','learning-status','learning-hashes','learning-decisions','learning-grid'];
 
 const score={mae_w:1,p95_error_w:2};const row=(scenario,seed)=>({scenario,seed,absolute_passed:true,relative_passed:true,failures:[],scores:{baseline:score,candidate:score},reported_power_comparison:{absolute_passed:true,relative_passed:true,failures:[]}});
 const make=(id,rows,date)=>({id,metadata:{run_completed_at:date},comparison:{status:'complete',runs:rows},traces:{}});
@@ -54,7 +57,7 @@ function harness(hash=''){
  return {nodes,ctx,requests,delay(url){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});pending.set(url,{promise});return {resolve(value){pending.delete(url);resolve(value);},reject(error){pending.delete(url);reject(error);}};}};
 }
 const main=harness(),{nodes,ctx}=main;
-const cleared=(all=true)=>{assert.equal(nodes.chart.children.length,0);assert.equal(nodes.metrics.children.length,0);assert.equal(nodes.learning.hidden,true);assert.equal(nodes['learning-metrics'].children.length,0);assert.equal(nodes['learning-evidence'].children.length,0);if(all)assert.equal(nodes.downloads.children.length,0);else assert.ok(nodes.downloads.children.every(n=>n.href.includes(`runs/${nodes.history.value}/`)));};
+const cleared=(all=true)=>{assert.equal(nodes.chart.children.length,0);assert.ok(nodes['zoom-in'].disabled);assert.ok(nodes['zoom-select'].disabled);assert.equal(nodes.metrics.children.length,0);assert.equal(nodes.learning.hidden,true);assert.equal(nodes['learning-metrics'].children.length,0);assert.equal(nodes['learning-evidence'].children.length,0);if(all)assert.equal(nodes.downloads.children.length,0);else assert.ok(nodes.downloads.children.every(n=>n.href.includes(`runs/${nodes.history.value}/`)));};
 (async()=>{
  await tick();assert.equal(nodes.firmware.value,'branch:erg-spike-gate');assert.equal(nodes['test-type'].value,'short');assert.equal(nodes.scenario.value,'steps');assert.equal(nodes.seed.value,'7');
  assert.deepEqual(nodes.history.children.map(n=>n.value),['a','a-old']);assert.equal(nodes.firmware.children.filter(n=>n.value==='branch:erg-spike-gate').length,1);assert.ok(nodes.firmware.children.some(n=>n.value==='release:v25.1'&&n.textContent.includes('2025-01-01')));
@@ -100,7 +103,37 @@ const cleared=(all=true)=>{assert.equal(nodes.chart.children.length,0);assert.eq
  const missing=harness('#not-a-run');await tick();assert.equal(missing.nodes.history.value,'a');
  const failure=main.delay('runs/b/data.json');const failed=nodes.history.change('b');failure.resolve({ok:false});await failed;cleared();assert.match(nodes.notice.textContent,/No previous run/);
  await nodes.firmware.change('branch:erg-spike-gate');assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');
+ // Zoom runs against actual pointer handlers, including touch opt-in and cancellations.
+ const z=harness('#long-full'),zn=z.nodes,run=code=>vm.runInContext(code,z.ctx);await tick();
+ const click=id=>zn[id].events.click();
+ const pointer=(kind,x,extra={})=>zn.chart.events[kind]({pointerId:1,pointerType:'mouse',button:0,isPrimary:true,clientX:x,clientY:100,preventDefault(){},...extra});
+ const range=()=>JSON.parse(run('JSON.stringify(zoomWindow)'));
+ assert.match(zn['zoom-range'].textContent,/Full ride: 0–5400 s/);assert.ok(zn['zoom-reset'].disabled);
+ pointer('pointerdown',713);pointer('pointermove',227);pointer('pointerup',227);assert.deepEqual(range(),[1080,4320]); // reverse drag
+ assert.ok(zn.chart.children.filter(n=>n.tagName==='polyline').every(n=>n['clip-path']==='url(#plot-clip)'));
+ assert.ok(zn.chart.children.some(n=>n.textContent==='1080s'));assert.ok(zn.chart.children.some(n=>n.textContent==='4320s'));
+ click('zoom-in');assert.deepEqual(range(),[1890,3510]);click('zoom-out');assert.deepEqual(range(),[1080,4320]);
+ click('zoom-earlier');assert.deepEqual(range(),[0,3240]);assert.ok(zn['zoom-earlier'].disabled);click('zoom-later');assert.deepEqual(range(),[1620,4860]);click('zoom-reset');assert.equal(range(),null);
+ pointer('pointerdown',227);pointer('pointermove',230);pointer('pointerup',230);assert.equal(range(),null); // tiny gesture
+ pointer('pointerdown',227);pointer('pointermove',713);pointer('pointercancel',713);assert.equal(range(),null);assert.equal(run('selection'),null);
+ pointer('pointerdown',227);pointer('pointermove',713);pointer('lostpointercapture',713);assert.equal(range(),null);
+ pointer('pointerdown',227,{pointerType:'touch'});assert.equal(run('selection'),null); // normal touch scroll
+ click('zoom-select');assert.equal(zn.chart['data-select-mode'],'true');pointer('pointerdown',227,{pointerType:'touch'});pointer('pointermove',713,{pointerType:'touch'});pointer('pointerup',713,{pointerType:'touch'});assert.deepEqual(range(),[1080,4320]);assert.equal(zn.chart['data-select-mode'],'false');
+ click('zoom-select');pointer('pointerdown',227,{pointerType:'touch'});pointer('pointermove',713,{pointerId:2,pointerType:'touch',isPrimary:false});assert.equal(run('selection.last'),227);pointer('pointercancel',713,{pointerType:'touch'});assert.deepEqual(range(),[1080,4320]);
+ click('zoom-select');pointer('pointerdown',227);zn.chart.events.keydown({key:'Escape'});assert.equal(run('selection'),null);assert.equal(zn.chart['data-select-mode'],'false');
+ // Every sample shares the same time transform. No interpolation adds new samples.
+ assert.equal(run('windowRows([[0,1],[1,2],[2,3],[3,4]],1.2,1.8).length'),2);
+ click('zoom-reset');for(let i=0;i<20;i++)click('zoom-in');assert.equal(range()[1]-range()[0],1);assert.ok(zn['zoom-in'].disabled);
+ for(let i=0;i<20;i++)click('zoom-out');assert.equal(range(),null);
+ run('zoomWindow=[4000,5000];render()');assert.deepEqual(range(),[4000,5000]);
+ // Available shorter runs clamp the window; unavailable data clears it and cannot be resurrected by stale fetches.
+ const short=JSON.parse(JSON.stringify(runs['long-full']));short.traces={'long_ride-27':{candidate:[[0,150,151,152],[1800,180,179,178]]}};short.motor={traces:{}};
+ z.ctx.shortRun=short;run('current=shortRun;render()');assert.deepEqual(range(),[800,1800]);
+ const zslow=z.delay('runs/long-full-old/data.json');const zp=zn.history.change('long-full-old');await tick();assert.ok(zn['zoom-in'].disabled);pointer('pointerdown',227);assert.equal(run('selection'),null);
+ await zn.firmware.change('branch:branch-b');zslow.resolve({ok:true,json:async()=>runs['long-full-old']});await zp;assert.equal(range(),null);assert.equal(zn.chart.children.length,0);assert.ok(zn['zoom-select'].disabled);
+ await zn.firmware.change('branch:erg-spike-gate');assert.equal(range(),null);
+ run('current.traces={};current.motor={traces:{}};render()');assert.ok(zn['zoom-in'].disabled);assert.equal(range(),null);
  const html=fs.readFileSync(require('node:path').join(__dirname,'../dashboard/index.html'),'utf8');assert.match(html,/not accepted insertions/);assert.match(html,/loaded into RAM; flash persistence is not tested/);assert.match(html,/do not establish that learning causes an improvement/);
- console.log('PASS: firmware grouping, exact snapshots, deep links, absent combinations, preserved filters, motor axes/gaps, long-ride learning evidence, safe links, unavailable recovery, and stale-fetch isolation');
+ console.log('PASS: chart zoom region/buttons/touch/cancellation/bounds/async/unavailable,  firmware grouping, exact snapshots, deep links, absent combinations, preserved filters, motor axes/gaps, long-ride learning evidence, safe links, unavailable recovery, and stale-fetch isolation');
 })().catch(e=>{console.error(e);process.exitCode=1;});
 

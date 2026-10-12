@@ -39,7 +39,7 @@ function updateSelectors(preferredId){
 }
 async function choose(preferredId){
  if(updateSelectors(preferredId))return load();
- ++serial;current=null;clearRun();$('scenario').disabled=false;$('seed').disabled=false;
+ ++serial;current=null;clearRun();clearChartZoom(true);$('scenario').disabled=false;$('seed').disabled=false;
  $('notice').textContent='UNAVAILABLE: No recorded '+($('test-type').value==='long'?`${desiredDuration}-minute long ride with ${initialState(desiredTable)}`:'short scenario test')+' for this firmware. Your scenario and seed selections are kept. Choose another test or firmware; no previous chart or baseline-only result is shown.';
  $('chart-label').textContent='Selected test unavailable';location.hash='';
 }
@@ -48,28 +48,100 @@ function card(label,value,note,ok){const d=el('div',undefined,'card');d.append(e
 function both(row,key){const overall=row.overall_checks?.[key];if(typeof overall==='boolean')return overall;const v=row[key],sensor=row.reported_power_comparison?.[key];return v===false||sensor===false?false:v===true&&sensor===true?true:null;}
 function line(label,value){$('provenance').append(el('dt',label),el('dd',String(value??'Not recorded')));}
 function link(text,path){const a=el('a',text);a.href=path;return a;}
+// One shared elapsed-time window for every series; y axes stay stable while zooming.
+let zoomWindow=null,chartEnd=0,chartRow=null,selection=null,selectMode=false;
+const zoomIds=['zoom-in','zoom-out','zoom-reset','zoom-earlier','zoom-later','zoom-select'];
+const formatTime=t=>Number(t.toFixed(1)).toString();
+function clampWindow(range,end){
+ const span=Math.min(end,Math.max(Math.min(1,end),Math.abs(range[1]-range[0])));
+ const from=Math.max(0,Math.min(Math.min(...range),end-span));
+ return span>=end?null:[from,from+span];
+}
+function windowRows(rows,from,to){
+ // Keep neighboring samples for line intersections at the clip edges; no new data is inferred.
+ let first=rows.findIndex(r=>r[0]>=from);if(first<0)first=rows.length;
+ let last=rows.findIndex(r=>r[0]>to);if(last<0)last=rows.length;
+ return rows.slice(Math.max(0,first-1),Math.min(rows.length,last+1));
+}
+function updateZoomControls(){
+ const ready=chartEnd>0,range=zoomWindow||[0,chartEnd],span=range[1]-range[0];
+ for(const id of zoomIds)$(id).disabled=!ready;
+ $('zoom-in').disabled=!ready||span<=Math.min(1,chartEnd);
+ for(const id of ['zoom-out','zoom-reset'])$(id).disabled=!ready||!zoomWindow;
+ $('zoom-earlier').disabled=!ready||!zoomWindow||range[0]<=0;
+ $('zoom-later').disabled=!ready||!zoomWindow||range[1]>=chartEnd;
+ $('zoom-select').setAttribute('aria-pressed',String(selectMode));
+ $('chart').setAttribute('data-select-mode',String(selectMode));
+ $('zoom-select').textContent=selectMode?'Cancel selection':'Select area';
+ $('zoom-range').textContent=ready?`${zoomWindow?'Showing':'Full ride'}: ${formatTime(range[0])}–${formatTime(range[1])} s of ${formatTime(chartEnd)} s`:'Zoom unavailable';
+}
+function cancelSelection(){
+ if(selection){const id=selection.id;selection.rect.remove();selection=null;if($('chart').hasPointerCapture?.(id))$('chart').releasePointerCapture(id);}
+}
+function clearChartZoom(reset=false){cancelSelection();chartRow=null;chartEnd=0;selectMode=false;if(reset)zoomWindow=null;updateZoomControls();}
+function changeZoom(factor,shift=0){
+ if(!chartRow||!chartEnd)return;const [a,b]=zoomWindow||[0,chartEnd],span=(b-a)*factor,center=(a+b)/2+(b-a)*shift;
+ zoomWindow=clampWindow([center-span/2,center+span/2],chartEnd);draw(chartRow);
+}
+function plotPoint(event){
+ const point=$('chart').createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+ return point.matrixTransform($('chart').getScreenCTM().inverse());
+}
+function selectionEnd(event,cancel=false){
+ if(!selection||event.pointerId!==selection.id)return;
+ const {start,last,range}=selection;cancelSelection();
+ if(!cancel&&Math.abs(last-start)>=8){const time=x=>range[0]+(x-65)/810*(range[1]-range[0]);zoomWindow=clampWindow([time(start),time(last)],chartEnd);}
+ selectMode=false;updateZoomControls();if(chartRow)draw(chartRow);
+}
+$('chart').addEventListener('pointerdown',event=>{
+ if(!chartRow||!chartEnd||event.isPrimary===false||event.button!==0||event.pointerType==='touch'&&!selectMode)return;
+ if(selection)return;const point=plotPoint(event);if(point.x<65||point.x>875||point.y<40||point.y>280)return;
+ event.preventDefault();const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+ for(const[k,v]of Object.entries({x:point.x,y:40,width:0,height:240,fill:'#58dec833',stroke:'#58dec8','pointer-events':'none'}))rect.setAttribute(k,v);
+ $('chart').append(rect);selection={id:event.pointerId,start:point.x,last:point.x,range:zoomWindow||[0,chartEnd],rect};$('chart').setPointerCapture(event.pointerId);
+});
+$('chart').addEventListener('pointermove',event=>{
+ if(!selection||event.pointerId!==selection.id)return;event.preventDefault();selection.last=Math.max(65,Math.min(875,plotPoint(event).x));
+ selection.rect.setAttribute('x',Math.min(selection.start,selection.last));selection.rect.setAttribute('width',Math.abs(selection.last-selection.start));
+});
+$('chart').addEventListener('pointerup',event=>selectionEnd(event));
+$('chart').addEventListener('pointercancel',event=>selectionEnd(event,true));
+$('chart').addEventListener('lostpointercapture',event=>selectionEnd(event,true));
+$('chart').addEventListener('keydown',event=>{if(event.key==='Escape'){cancelSelection();selectMode=false;updateZoomControls();}});
+$('zoom-select').addEventListener('click',()=>{cancelSelection();selectMode=!selectMode;updateZoomControls();});
+$('zoom-in').addEventListener('click',()=>changeZoom(.5));
+$('zoom-out').addEventListener('click',()=>changeZoom(2));
+$('zoom-earlier').addEventListener('click',()=>changeZoom(1,-.5));
+$('zoom-later').addEventListener('click',()=>changeZoom(1,.5));
+$('zoom-reset').addEventListener('click',()=>{zoomWindow=null;if(chartRow)draw(chartRow);});
+
 function draw(row){
-const svg=$('chart');svg.replaceChildren();const ns='http://www.w3.org/2000/svg';
+cancelSelection();const svg=$('chart');svg.replaceChildren();chartRow=row;const ns='http://www.w3.org/2000/svg';
 const add=(tag,attrs,text)=>{const n=document.createElementNS(ns,tag);for(const[k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;svg.append(n);};
 const key=`${row.scenario}-${row.seed}`,artifactKey=safeId(row.artifact_key)?row.artifact_key:key,traces=current.traces?.[key]||current.traces?.[artifactKey]||{};
 const c=traces.candidate||[],b=traces.baseline||[],motor=current.motor?.traces?.[key]||current.motor?.traces?.[artifactKey]||[];
 const validMotor=motor.filter(r=>typeof r[1]==='number'&&Number.isFinite(r[1]));
 $('motor-note').textContent=validMotor.length?'Red: candidate simulated actual motor position (motor_steps), right axis in steps. This is the virtual motor counter; commanded target and physical bike position are separate signals.'+(validMotor.length<motor.length?' Missing position samples are shown as gaps.':''):'Actual motor position unavailable for this run / scenario / seed; no position values are inferred.';
-if(!c.length&&!b.length){add('text',{x:65,y:140},'No power trace available for this run.');if(!validMotor.length)return;}
+if(!c.length&&!b.length){add('text',{x:65,y:140},'No power trace available for this run.');if(!validMotor.length){clearChartZoom(true);return;}}
 const all=[...c,...b],end=Math.max(...all.map(r=>r[0]),...motor.map(r=>r[0]),1);
 // Watts and steps have independent scales. Motor values must never inflate watts.
 const top=Math.ceil(Math.max(...all.flatMap(r=>r.slice(1,4)),100)/100)*100;
-const left=65,right=875,x=t=>left+t/end*(right-left),y=w=>280-w/top*240;
-for(let i=0;i<=4;i++){const w=top*i/4;add('line',{x1:left,x2:right,y1:y(w),y2:y(w),stroke:'#304255'});add('text',{x:10,y:y(w)+4},`${w} W`);const t=end*i/4;add('text',{x:x(t)-10,y:306},`${Math.round(t)}s`);}
-for(const[rows,col,color]of [[c.length?c:b,1,'#b2c1cc'],[b,2,'#639de8'],[c,2,'#58dec8'],[c,3,'#f5c16c']]){if(!rows.length)continue;add('polyline',{points:rows.map(r=>`${x(r[0]).toFixed(2)},${y(r[col]).toFixed(2)}`).join(' '),fill:'none',stroke:color,'stroke-width':col===3?1:1.6,opacity:col===3?.6:1});}
+chartEnd=end;zoomWindow=zoomWindow?clampWindow(zoomWindow,end):null;updateZoomControls();
+const [from,to]=zoomWindow||[0,end];
+const left=65,right=875,x=t=>left+(t-from)/(to-from)*(right-left),y=w=>280-w/top*240;
+const defs=document.createElementNS(ns,'defs'),clip=document.createElementNS(ns,'clipPath'),rect=document.createElementNS(ns,'rect');clip.setAttribute('id','plot-clip');for(const[k,v]of Object.entries({x:left,y:40,width:right-left,height:240}))rect.setAttribute(k,v);clip.append(rect);defs.append(clip);svg.append(defs);
+for(let i=0;i<=4;i++){const w=top*i/4;add('line',{x1:left,x2:right,y1:y(w),y2:y(w),stroke:'#304255'});add('text',{x:10,y:y(w)+4},`${w} W`);const t=from+(to-from)*i/4;add('text',{x:x(t)-10,y:306},`${formatTime(t)}s`);}
+for(const[rows,col,color]of [[c.length?c:b,1,'#b2c1cc'],[b,2,'#639de8'],[c,2,'#58dec8'],[c,3,'#f5c16c']]){if(!rows.length)continue;add('polyline',{'clip-path':'url(#plot-clip)',points:windowRows(rows,from,to).map(r=>`${x(r[0]).toFixed(2)},${y(r[col]).toFixed(2)}`).join(' '),fill:'none',stroke:color,'stroke-width':col===3?1:1.6,opacity:col===3?.6:1});}
 if(validMotor.length){
 const values=validMotor.map(r=>r[1]),lo=Math.min(...values),hi=Math.max(...values),pad=Math.max((hi-lo)*.08,1);
 const bottom=Math.floor(lo-pad),topStep=Math.ceil(hi+pad),ym=p=>280-(p-bottom)/(topStep-bottom)*240;
 add('line',{x1:right,x2:right,y1:40,y2:280,stroke:'#ff646b'});add('text',{x:right+10,y:22,class:'motor-axis'},'Motor (steps)');
 for(let i=0;i<=4;i++){const p=bottom+(topStep-bottom)*i/4;add('text',{x:right+10,y:ym(p)+4,class:'motor-axis'},String(Math.round(p)));}
-let segment=[];const flush=()=>{if(segment.length===1)add('circle',{cx:x(segment[0][0]),cy:ym(segment[0][1]),r:2,fill:'#ff646b','data-series':'actual-motor'});else if(segment.length)add('polyline',{points:segment.map(r=>`${x(r[0]).toFixed(2)},${ym(r[1]).toFixed(2)}`).join(' '),fill:'none',stroke:'#ff646b','stroke-width':1.8,'data-series':'actual-motor'});segment=[];};
+let segment=[];const flush=()=>{if(segment.length===1)add('circle',{'clip-path':'url(#plot-clip)',cx:x(segment[0][0]),cy:ym(segment[0][1]),r:2,fill:'#ff646b','data-series':'actual-motor'});else if(segment.length)add('polyline',{'clip-path':'url(#plot-clip)',points:windowRows(segment,from,to).map(r=>`${x(r[0]).toFixed(2)},${ym(r[1]).toFixed(2)}`).join(' '),fill:'none',stroke:'#ff646b','stroke-width':1.8,'data-series':'actual-motor'});segment=[];};
 for(const r of motor){if(typeof r[1]==='number'&&Number.isFinite(r[1]))segment.push(r);else flush();}flush();
-}}
+}
+add('rect',{x:65,y:40,width:810,height:240,fill:'transparent','data-plot-hit':'true'});
+}
 
 function testedCoverage(c){return Number.isInteger(c?.tested_range_required)&&c.tested_range_required>0&&Number.isInteger(c.tested_range_supported)&&c.tested_range_supported>=0&&c.tested_range_supported<=c.tested_range_required?`${c.tested_range_supported} / ${c.tested_range_required} tested cells`:'Tested-range coverage unavailable';}
 function gridDescription(c){
@@ -116,7 +188,7 @@ function render(){const m=current.comparison;const longRide=m.experiment==='cont
 $('notice').textContent=m.status==='complete'?`${m.budget_status||'Provisional engineering budgets'}. ${rows.length-abs} pairs outside one or more absolute bands. This is a model result, not a hardware pass.`:`${m.status.toUpperCase()}: ${m.error||current.metadata.reason||'No complete result available.'}`;
 $('notice').textContent+=` Tested candidate: ${(m.firmware?.candidate?.commit||history.find(r=>r.id===current.id)?.candidate_commit||'revision not recorded').slice(0,12)}. Branch snapshots can differ between tests.`;
 $('metrics').replaceChildren();$('decisions').replaceChildren();renderLearning(row);if(row){$('chart-label').textContent=`${row.scenario} / seed ${row.seed}`;draw(row);const head=el('tr');for(const t of ['Signal / metric','Baseline','Candidate','Delta','Relative allowance'])head.append(el('th',t));$('metrics').append(head);for(const [signal,sub] of [['Plant',null],['Delivered sensor','delivered_sensor_metrics']]){const base=sub?row.scores?.baseline?.[sub]:row.scores?.baseline,cand=sub?row.scores?.candidate?.[sub]:row.scores?.candidate,changes=sub?row.reported_power_comparison?.changes:row.changes;for(const metric of ['mae_w','p95_error_w','overshoot_w','undershoot_w','outside_band_percent','steady_rmse_w','steady_variation_w_per_s','unsettled_steps','worst_settling_s']){const tr=el('tr');for(const t of [`${signal} · ${metric.replaceAll('_',' ')}`,number(base?.[metric]),number(cand?.[metric]),number(changes?.[metric]?.delta),number(changes?.[metric]?.allowance)])tr.append(el('td',t));$('metrics').append(tr);}}
-for(const [label,score] of [['Plant',row],['Delivered sensor',row.reported_power_comparison]]){const p=el('p',`${longRide?'Whole ride · ':''}${label}: absolute ${decision(score?.absolute_passed)} · relative ${decision(score?.relative_passed,true)}`);$('decisions').append(p);const ul=el('ul');for(const f of (score?.failures||[]).filter(f=>label!=='Plant'||!f.startsWith('delivered sensor: ')))ul.append(el('li',f,'bad'));$('decisions').append(ul);}}else{$('chart').replaceChildren();$('motor-note').textContent='';$('chart-label').textContent='Selected scenario / seed unavailable';const explanation=`${desiredScenario||'No scenario'} / seed ${desiredSeed||'not selected'} is unavailable in this run. Your selection is kept; switch back or choose an available combination.`;$('notice').textContent+=' '+explanation;$('decisions').append(el('p',explanation));}
+for(const [label,score] of [['Plant',row],['Delivered sensor',row.reported_power_comparison]]){const p=el('p',`${longRide?'Whole ride · ':''}${label}: absolute ${decision(score?.absolute_passed)} · relative ${decision(score?.relative_passed,true)}`);$('decisions').append(p);const ul=el('ul');for(const f of (score?.failures||[]).filter(f=>label!=='Plant'||!f.startsWith('delivered sensor: ')))ul.append(el('li',f,'bad'));$('decisions').append(ul);}}else{clearChartZoom(true);$('chart').replaceChildren();$('motor-note').textContent='';$('chart-label').textContent='Selected scenario / seed unavailable';const explanation=`${desiredScenario||'No scenario'} / seed ${desiredSeed||'not selected'} is unavailable in this run. Your selection is kept; switch back or choose an available combination.`;$('notice').textContent+=' '+explanation;$('decisions').append(el('p',explanation));}
 $('provenance').replaceChildren();const md=current.metadata;line('Tested firmware ref',history.find(r=>r.id===current.id)?.display_ref||md.candidate_ref||md.release_tag||'Not recorded');line('Run ID',current.id);line('Experiment completed (UTC)',md.run_completed_at||'Not recorded');line('Evidence imported (UTC)',md.imported_at);line('Candidate release',md.release_tag||'Development commit');line('Release published (UTC)',md.release_published_at||'Not a release / not recorded');line('Baseline release',md.baseline_release_tag);line('Baseline release published',md.baseline_release_published_at);line('Candidate commit',m.firmware?.candidate?.commit);line('Baseline commit',m.firmware?.baseline?.commit);line('Adapter commit',md.adapter_commit);line('Adapter SHA-256',m.adapter?.sha256);line('Adapter patch SHA-256',md.adapter_patch_sha256||'No compatibility patch');line('Simulator commit',md.simulator_commit);line('Simulator source SHA-256',m.simulator_sha256);line('Profile SHA-256',m.profile_sha256);line('Package config SHA-256',m.package_config_sha256);line('Candidate source SHA-256',m.firmware?.candidate?.source_sha256);line('Baseline source SHA-256',m.firmware?.baseline?.source_sha256);line('Source dirty flags',JSON.stringify(Object.fromEntries(Object.entries(m.firmware||{}).map(([k,v])=>[k,v.dirty]))));line('Coverage',m.coverage_level);line('Runtime toolchain',JSON.stringify(md.runtime_toolchain||'Not recorded; adapter-provenance toolchain, if present, describes original local validation only'));line('Provenance notes',md.notes);
 $('downloads').replaceChildren(link('Full raw evidence ZIP',`runs/${current.id}/evidence.zip`),link('Comparison JSON',`runs/${current.id}/comparison.json`),link('File checksums',`runs/${current.id}/SHA256SUMS.txt`));if(/^https:\/\/github\.com\/doudar\/smartspin2k-simulator\/actions\/runs\/\d+$/.test(md.workflow_url||''))$('downloads').append(link('GitHub Actions run',md.workflow_url));$('json').textContent=JSON.stringify(m,null,2);}
 async function load(){const id=$('history').value;if(!safeId(id))throw Error('Invalid run identifier');const token=++serial;try{clearRun();$('notice').textContent='Loading selected experiment…';const result=await fetch(`runs/${id}/data.json`);if(!result.ok)throw Error('Run data unavailable');const data=await result.json();try{const motor=await fetch(`motor-v1/${id}.json`);if(motor.ok)data.motor=await motor.json();}catch(e){data.motor=null;}if(token!==serial)return;current=data;$('scenario').disabled=false;$('seed').disabled=false;render();location.hash=encodeURIComponent(id);}catch(e){if(token===serial)fail(e);}}
@@ -127,8 +199,8 @@ $('duration').addEventListener('change',()=>{desiredDuration=$('duration').value
 $('table').addEventListener('change',()=>{desiredTable=$('table').value;return choose().catch(fail);});
 $('scenario').addEventListener('change',()=>{desiredScenario=$('scenario').value;return choose($('history').value).catch(fail);});
 $('seed').addEventListener('change',()=>{desiredSeed=$('seed').value;return choose($('history').value).catch(fail);});
-function clearRun(){for(const id of ['overview','chart','metrics','decisions','provenance','downloads','json','chart-label','motor-note'])$(id).replaceChildren();clearLearning();$('scenario').disabled=true;$('seed').disabled=true;}
-function fail(e){clearRun();$('notice').textContent=`Unable to load results: ${e.message}. No previous run is being displayed.`;}
+function clearRun(){clearChartZoom();for(const id of ['overview','chart','metrics','decisions','provenance','downloads','json','chart-label','motor-note'])$(id).replaceChildren();clearLearning();$('scenario').disabled=true;$('seed').disabled=true;}
+function fail(e){clearRun();clearChartZoom(true);$('notice').textContent=`Unable to load results: ${e.message}. No previous run is being displayed.`;}
 (async()=>{const r=await fetch(`history.json?v=${Date.now()}`,{cache:'no-store'});if(!r.ok)throw Error('History unavailable');history=await r.json();history.sort((a,b)=>(b.metadata.run_completed_at||b.metadata.imported_at||'').localeCompare(a.metadata.run_completed_at||a.metadata.imported_at||''));
  const initial=history.find(r=>r.id===decodeURIComponent(location.hash.slice(1)))||history[0];if(!initial){$('notice').textContent='No experiments published yet.';return;}
  const groups=[...new Map(history.map(r=>[firmwareKey(r),firmwareName(r)])).entries()];options($('firmware'),groups,firmwareKey(initial));
