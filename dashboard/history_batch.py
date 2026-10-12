@@ -20,6 +20,11 @@ def main():
                 data=json.loads(manifest.read_text());data['status']='failed';data['passed']=False;data['error']='Production-source audit failed. Do not interpret this run as faithful release evidence.';manifest.write_text(json.dumps(data,indent=2));codes.append(2)
         # Include the reviewed adapter provenance beside each raw run.
         output.mkdir(parents=True,exist_ok=True)
-        (output/'adapter-provenance.json').write_bytes((ROOT/'compatibility/provenance.json').read_bytes())
+        provenance=json.loads((ROOT/'compatibility/provenance.json').read_text())
+        if 'toolchain' in provenance: provenance['original_validation_toolchain']=provenance.pop('toolchain')
+        provenance['runtime_toolchain_location']='run-metadata.json:runtime_toolchain'
+        provenance['initial_state_audit_scope']='Original local four-revision validation, not a newly repeated cloud audit'
+        (output/'adapter-provenance.json').write_text(json.dumps(provenance,indent=2))
+        (output/'initial-state-audit.json').write_bytes((ROOT/'compatibility/initial-state-audit.json').read_bytes())
     return max(codes,default=2)
 if __name__=='__main__':sys.exit(main())

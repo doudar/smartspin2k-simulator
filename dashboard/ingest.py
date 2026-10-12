@@ -26,6 +26,8 @@ def main():
                     valid_tree(metadata)
                     if not isinstance(metadata,dict): raise ValueError('Producer metadata must be an object')
                     metadata.update(base_metadata)
+                    if (source/'adapter-provenance.json').exists() and not metadata.get('runtime_toolchain'):
+                        metadata['notes']=metadata.get('notes','')+' Runtime toolchain was not recorded for this cloud run. Any toolchain in adapter-provenance.json describes original local validation only; the initial-state audit is linked from the repository compatibility directory.'
                     materialize(source,a.history/rid,rid,metadata)
                 except (ValueError,KeyError,TypeError,json.JSONDecodeError,UnicodeError,OSError) as e:
                     # Publish rejected/incomplete runs, but do not expose unsafe payloads.
