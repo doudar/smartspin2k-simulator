@@ -93,5 +93,8 @@ Initial investigation verified these official release SHAs:
 - 26.9.15: `8e861fbbf9e162497647318e3ddb8823926fcce9`.
 - 26.8.23: `afe356dc3ae828a4afcfdc5a92968bfa1d4175db`.
 
-The latter two initially lack newer reset-helper APIs required by the adapter;
-compatibility work is tracked separately and no unavailable scores are filled in.
+All three now run under the same reviewed [test-only compatibility patch](../dashboard/compatibility/history-adapter.patch), plus current `782c2b5`. The **Historical release experiment** workflow runs the bounded four-candidate matrix and publishes each completed/failed experiment. It uses simulator `d475d9fa`, baseline26.10.1 and identical seeds7/27/91. Adapter base `f836c058` plus patch has fingerprint `098a900211f1803e2723634325061b6185b1d5e2fb20e13e8698d42097910f32`.
+
+The patch supplies historical host API plumbing, preserves the historical empty-table constructors in fresh per-ride processes, and uses C++20 for an existing historical `starts_with` call. It does not add newer controller/learning behavior. An automated audit checks production bodies byte-for-byte, allowing only documented peripheral include and virtual-clock seams. The adapter provenance, initial-state audit and local source audit are in `dashboard/compatibility/`. Each cloud experiment includes its own newly executed source audit. Earlier unsupported-API preflight results are superseded, not firmware failures.
+
+Verified local full-matrix absolute passes:26.8.23 7/18,26.9.15 7/18,26.10.1 6/18,current782c2b5 9/18. These are provisional whole-matrix counts, not a declaration that the newest release wins every scenario. See live raw metrics and separate relative decisions for detail.

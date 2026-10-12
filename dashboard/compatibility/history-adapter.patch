@@ -1,0 +1,259 @@
+--- a/scripts/erg_sim/bridge.py
++++ b/scripts/erg_sim/bridge.py
+@@ -36,18 +36,39 @@
+ extern uint32_t clockMs;
+ inline unsigned long millis() { return clockMs; }
+ ''', encoding="utf-8")
++    # Historical native headers used ArduinoFake only as an Arduino API include.
++    (folder/"ArduinoFake.h").write_text('#pragma once\n#include "Arduino.h"\n', encoding="utf-8")
+     source = (root/"src/ERG_Mode.cpp").read_text(encoding="utf-8")
+-    for header in ['"SS2KLog.h"', '"Main.h"', '"Power_Table.h"', '<LittleFS.h>']:
++    for header in ['"SS2KLog.h"', '"Main.h"', '"Power_Table.h"', '"BLE_Custom_Characteristic.h"', '<LittleFS.h>']:
+         source = source.replace('#include '+header, '')
+     table = (root/"src/Power_Table.cpp").read_text(encoding="utf-8")
++    has_clear_runtime = 'void PowerTable::clearRuntime(' in table
+     table = '\n'.join(function(table, signature) for signature in (
+         "void PowerBuffer::set(", "void PowerBuffer::clearSamples(", "void PowerBuffer::reset(", "int PowerBuffer::getReadings(",
+         "void PowerTable::processPowerValue(", "void PowerTable::newEntry(", "void PowerTable::setStepperMinMax(",
+-        "void PowerTable::clearRuntime(", "bool PowerTable::reset("))
++        "void PowerTable::clearRuntime(", "bool PowerTable::reset(")
++        if signature in table or signature not in ("void PowerBuffer::clearSamples(", "void PowerTable::clearRuntime("))
+     stepper = (root/"src/Stepper.cpp").read_text(encoding="utf-8")
+     homing = "static int lastHomingSgThreshold=0;\n" + '\n'.join(function(stepper, signature) for signature in (
+         "static int getScaledHomingSensitivity(", "static HomingSgBaseline getHomingSgBaseline(", "bool SS2K::_findEndStop("))
+     template = Path(__file__).with_name("native.cpp").read_text(encoding="utf-8")
++    if not has_clear_runtime:
++        # Historical table entries initialize empty in their production constructors.
++        # A new native process is created for every ride; do not graft newer reset,
++        # learning, freshness, or calibration semantics onto historical firmware.
++        template = template.replace("      table.clearRuntime();", "      // Historical production constructors supply fresh empty table state.")
++        template = template.replace("bool PowerTable::_manageSaveState(bool, bool)", "bool PowerTable::_manageSaveState(bool)")
++    if 'bool isTableSeeking(' not in (root/"include/ERG_Mode.h").read_text():
++        # Diagnostic-only column: this release predates the table-seek state machine.
++        template = template.replace("controller.isTableSeeking()", "0 /* table-seek telemetry unavailable in this release */")
++    helper_source = root/"src/PowerTable_Helpers.cpp"
++    helper_text = helper_source.read_text()
++    if 'unsigned long millis() {' in helper_text:
++        # Remove only the historical native-test wall-clock stub. Arduino.h above
++        # already supplies the shared virtual clock; all table math stays verbatim.
++        helper_text = helper_text.replace(function(helper_text, 'unsigned long millis('), '')
++        helper_source = folder/"PowerTable_Helpers.cpp"
++        helper_source.write_text(helper_text)
+     sources, flags = [], []
+     if packet_ingress:
+         from . import virtual_ble, virtual_ftms
+@@ -65,9 +86,9 @@
+                    .replace("/* PRODUCTION_STEPPER */", function(stepper, "void SS2K::moveStepper("))
+                    .replace("/* PRODUCTION_HOMING */", homing), encoding="utf-8")
+     exe = folder/"erg_bridge.exe"
+-    subprocess.run([compiler, "-O2", "-std=c++17", "-DPLATFORMIO_ENV_NATIVE", "-I"+str(folder),
++    subprocess.run([compiler, "-O2", "-std=c++20", "-DPLATFORMIO_ENV_NATIVE", "-I"+str(folder),
+                     "-I"+str(root/"include"), "-I"+str(root/"lib/SS2K/include"), "-I"+str(root/"lib/ArduinoCompat/include"),
+-                    str(cpp), str(root/"src/PowerTable_Helpers.cpp"), *sources, *flags, "-o", str(exe)], check=True)
++                    str(cpp), str(helper_source), *sources, *flags, "-o", str(exe)], check=True)
+     return exe
+ 
+ 
+--- a/scripts/erg_sim/native.cpp
++++ b/scripts/erg_sim/native.cpp
+@@ -46,7 +46,10 @@
+ struct { int spinDownFlag = 0; } spinBLEServer;
+ #endif
+ struct { int dirPin = 0; float homingSensitivityScaler = 1; } currentBoard;
+-struct { bool exists(const char*) { return false; } bool remove(const char*) { return true; } } LittleFS;
++// Historical reset() opens a missing table file; filesystem remains test-only.
++struct File { explicit operator bool() const { return false; } void close() {} };
++constexpr const char* FILE_READ = "r";
++struct { File open(const char*, const char*) { return {}; } bool exists(const char*) { return false; } bool remove(const char*) { return true; } } LittleFS;
+ int commits = 0;
+ struct BLE_ss2kCustomCharacteristic { static void notify(int, int) { ++commits; } };
+ 
+--- a/scripts/erg_sim/virtual_ble.py
++++ b/scripts/erg_sim/virtual_ble.py
+@@ -30,6 +30,14 @@
+     common = (root/'src/BLE_Common.cpp').read_text()
+     collector = (root/'src/SensorCollector.cpp').read_text()
+     declarations = Path(__file__).with_name('virtual_ble_facade.h').read_text()
++    if 'this->advertisedDevice = const_cast<const NimBLEAdvertisedDevice*>(device);' in client:
++        # Match historical peripheral ownership declaration; production methods stay verbatim.
++        declarations = declarations.replace('std::shared_ptr<const NimBLEAdvertisedDevice> advertisedDevice;', 'const NimBLEAdvertisedDevice* advertisedDevice = nullptr;')
++        declarations = declarations.replace('  void storeAdvertisement(std::shared_ptr<const NimBLEAdvertisedDevice> a){advertisedDevice=std::move(a);}', '')
++    if 'extern "C" int ble_uuid_cmp(' not in (root/'lib/ArduinoCompat/src/NimBLEUUID.cpp').read_text():
++        # Host-library symbols absent from old ArduinoCompat native linking.
++        # Exact helpers from release 26.10.1's ArduinoCompat, not controller code.
++        declarations += LEGACY_UUID_HELPERS
+     signatures = (
+         'static void notifyCB(', 'static bool subscribeToCharacteristic(',
+         'bool subscribeToAllNotifications(', 'void MyClientCallback::onDisconnect(',
+@@ -37,10 +45,12 @@
+         'void SpinBLEAdvertisedDevice::reset(', 'bool SpinBLEAdvertisedDevice::enqueueData(',
+         'NotifyData SpinBLEAdvertisedDevice::dequeueData(',
+     )
+-    impl = '\n'.join(_function(client, s) for s in signatures)
+-    service_start = common.index('namespace BLEServices {')
+-    service_end = common.index('}  // namespace BLEServices', service_start) + len('}  // namespace BLEServices')
+-    impl = common[service_start:service_end] + '\n' + impl
++    # Older subscription logic is inline in subscribeToAllNotifications.
++    impl = '\n'.join(_function(client, s) for s in signatures
++                     if s in client or s != 'static bool subscribeToCharacteristic(')
++    service_source = common if 'namespace BLEServices {' in common else (root/'include/BLE_Common.h').read_text()
++    # Retain the historical service inventory verbatim when it lived in a header.
++    impl = _function(service_source, 'namespace BLEServices {') + '\n' + impl
+     impl += '\nSensorDataFactory sensorDataFactory;\n' + _function(collector, 'void collectAndSet(')
+     impl += '\n' + _function(common, 'void BLECommunications(')
+     impl += Path(__file__).with_name('virtual_ble_runtime.inc').read_text()
+@@ -59,4 +69,63 @@
+     endian = folder/'virtual_ble_endian.o'
+     subprocess.run([shutil.which('gcc') or 'cc', '-I'+str(root/'lib/ArduinoCompat/include'), '-c', str(root/'lib/ArduinoCompat/src/os/endian.c'), '-o', str(endian)], check=True)
+     sources += [str(root/'lib/ArduinoCompat/src/NimBLEUUID.cpp'), str(endian)]
+-    return {"declarations": declarations, "implementation": impl, "sources": sources, "flags": []}
++    return {"declarations": declarations, "implementation": impl, "sources": sources, "flags": ["-include", str(root/"lib/ArduinoCompat/include/os/endian.h")]}
++
++# Host-only UUID support: 082d1ee26ddb009d5132547087f77be03d1b0ab7, lib/ArduinoCompat/src/NimBLEUUID.cpp.
++LEGACY_UUID_HELPERS = r'''
++#include <cstdio>
++extern "C" int ble_uuid_cmp(const ble_uuid_t* uuid1, const ble_uuid_t* uuid2) {
++    if (uuid1 == nullptr || uuid2 == nullptr) {
++        return uuid1 == uuid2 ? 0 : 1;
++    }
++
++    if (uuid1->type != uuid2->type) {
++        return static_cast<int>(uuid1->type) - static_cast<int>(uuid2->type);
++    }
++
++    switch (uuid1->type) {
++        case BLE_UUID_TYPE_16: {
++            const uint16_t lhs = BLE_UUID16(uuid1)->value;
++            const uint16_t rhs = BLE_UUID16(uuid2)->value;
++            return static_cast<int>(lhs) - static_cast<int>(rhs);
++        }
++        case BLE_UUID_TYPE_32: {
++            const uint32_t lhs = BLE_UUID32(uuid1)->value;
++            const uint32_t rhs = BLE_UUID32(uuid2)->value;
++            return lhs == rhs ? 0 : (lhs < rhs ? -1 : 1);
++        }
++        case BLE_UUID_TYPE_128:
++            return memcmp(BLE_UUID128(uuid1)->value, BLE_UUID128(uuid2)->value, sizeof(BLE_UUID128(uuid1)->value));
++        default:
++            return 1;
++    }
++}
++
++extern "C" char* ble_uuid_to_str(const ble_uuid_t* uuid, char* dst) {
++    if (uuid == nullptr || dst == nullptr) {
++        return dst;
++    }
++
++    switch (uuid->type) {
++        case BLE_UUID_TYPE_16:
++            snprintf(dst, BLE_UUID_STR_LEN, "0x%04" PRIx16, BLE_UUID16(uuid)->value);
++            break;
++        case BLE_UUID_TYPE_32:
++            snprintf(dst, BLE_UUID_STR_LEN, "0x%08" PRIx32, BLE_UUID32(uuid)->value);
++            break;
++        case BLE_UUID_TYPE_128: {
++            const uint8_t* value = BLE_UUID128(uuid)->value;
++            snprintf(dst, BLE_UUID_STR_LEN,
++                     "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", value[15], value[14],
++                     value[13], value[12], value[11], value[10], value[9], value[8], value[7], value[6], value[5],
++                     value[4], value[3], value[2], value[1], value[0]);
++            break;
++        }
++        default:
++            dst[0] = '\0';
++            break;
++    }
++
++    return dst;
++}
++'''
+--- a/scripts/erg_sim/virtual_ble_facade.h
++++ b/scripts/erg_sim/virtual_ble_facade.h
+@@ -42,12 +42,14 @@
+ struct NimBLEAdvertisedDevice { NimBLEAddress address{"c0:00:00:00:00:01"}; NimBLEAddress getAddress()const{return address;} };
+ struct NimBLEClient;
+ struct NimBLERemoteService;
++struct NimBLERemoteDescriptor {};
+ struct NimBLERemoteCharacteristic {
+   NimBLEUUID uuid; NimBLERemoteService* service=nullptr;
+   using Callback=void(*)(NimBLERemoteCharacteristic*,uint8_t*,size_t,bool);
+   Callback callback=nullptr; bool subscribed=false;
+   NimBLERemoteCharacteristic(uint16_t id):uuid(id){}
+   NimBLEUUID getUUID()const{return uuid;} int getHandle()const{return 1;}
++  NimBLERemoteDescriptor* getDescriptor(const NimBLEUUID&) { static NimBLERemoteDescriptor descriptor; return &descriptor; }
+   bool canNotify()const{return true;} bool canIndicate()const{return false;}
+   bool subscribe(bool,Callback cb){callback=cb;subscribed=true;return true;}
+   NimBLERemoteService* getRemoteService(){return service;}
+@@ -57,6 +59,7 @@
+   NimBLEUUID uuid; NimBLEClient* client=nullptr; std::vector<NimBLERemoteCharacteristic*> chars;
+   NimBLERemoteService(uint16_t id):uuid(id){}
+   NimBLEUUID getUUID()const{return uuid;}
++  const std::vector<NimBLERemoteCharacteristic*>& getCharacteristics(bool) { return chars; }
+   NimBLERemoteCharacteristic* getCharacteristic(const NimBLEUUID&id){for(auto*c:chars)if(c->uuid==id)return c;return nullptr;}
+ };
+ struct NimBLEClient {
+@@ -69,7 +72,13 @@
+ inline NimBLEClient* NimBLERemoteCharacteristic::getClient(){return service->client;}
+ using BLEClient=NimBLEClient;
+ struct VirtualAdvertising {bool isAdvertising()const{return true;}};
++struct VirtualFtmsServer;
++inline int ss2k_log_hex_to_buffer(const uint8_t*, int, char* out, int, int capacity) {
++  if (capacity) out[0] = '\0';
++  return 0;
++}
+ struct NimBLEDevice {
++  static VirtualFtmsServer* getServer();
+   static NimBLEClient client;
+   static NimBLEClient* getClientByPeerAddress(const NimBLEAddress&a){return a==client.address?&client:nullptr;}
+   static NimBLEClient* getClientByHandle(int h){return h==1?&client:nullptr;}
+--- a/scripts/erg_sim/virtual_ble_runtime.inc
++++ b/scripts/erg_sim/virtual_ble_runtime.inc
+@@ -25,7 +25,7 @@
+   else throw std::invalid_argument("Unsupported virtual BLE profile");
+   for(auto*s:client.services){s->client=&client;for(auto*c:s->chars){c->service=s;c->callback=nullptr;c->subscribed=false;}}
+   client.connected=true;
+-  NimBLEAdvertisedDevice advertisement;
++  static NimBLEAdvertisedDevice advertisement; // Lifetime covers historical raw-pointer consumers.
+   auto* primary=client.services.front();
+   spinBLEClient.myBLEDevices[0].set(&advertisement,1,primary->uuid,primary->chars.front()->uuid);
+   spinBLEClient.myBLEDevices[0].isPostConnected=subscribeToAllNotifications(&client);
+--- a/scripts/erg_sim/virtual_ftms.py
++++ b/scripts/erg_sim/virtual_ftms.py
+@@ -21,6 +21,11 @@
+     root = Path(source_root)
+     declarations = Path(__file__).with_suffix('.hpp').read_text(encoding='utf-8')
+     source = (root / 'src/BLE_Fitness_Machine_Service.cpp').read_text(encoding='utf-8')
++    common_header = (root / 'include/BLE_Common.h').read_text(encoding='utf-8')
++    legacy_macros = [line for line in common_header.splitlines() if line.startswith('#define bytes_to_u16(')]
++    if legacy_macros:
++        # Preserve the historical packet conversion macro byte-for-byte.
++        declarations += '\n' + '\n'.join(legacy_macros) + '\n'
+     processor = function(source, 'void BLE_Fitness_Machine_Service::processFTMSWrite(')
+     # Scope substitutions strictly to peripheral logging/notification plumbing.
+     # No production statement, branch, packet parsing or state write is changed.
+--- a/scripts/erg_sim/virtual_ftms.hpp
++++ b/scripts/erg_sim/virtual_ftms.hpp
+@@ -39,6 +39,23 @@
+   void spinDown(int) {} // Notification-only homing sink; not a control decision.
+ } fitnessMachineService;
+ 
++// Historical FTMS processors retrieve the same characteristic through a server.
++using BLECharacteristic = VirtualFtmsCharacteristic;
++struct VirtualFtmsService {
++  VirtualFtmsCharacteristic* getCharacteristic(const NimBLEUUID& uuid) {
++    if (uuid != FITNESSMACHINECONTROLPOINT_UUID) throw std::invalid_argument("unsupported virtual FTMS characteristic");
++    return &fitnessMachineService.controlPoint;
++  }
++};
++struct VirtualFtmsServer {
++  VirtualFtmsService service;
++  VirtualFtmsService* getServiceByUUID(const NimBLEUUID& uuid) {
++    if (uuid != FITNESSMACHINESERVICE_UUID) throw std::invalid_argument("unsupported virtual FTMS service");
++    return &service;
++  }
++};
++VirtualFtmsServer* NimBLEDevice::getServer() { static VirtualFtmsServer server; return &server; }
++
+ // Only the simulator's well-formed ERG session packets are supported here.
+ // This guard is NOT production malformed-packet validation: the production
+ // target-power handler currently reads its payload without checking length.

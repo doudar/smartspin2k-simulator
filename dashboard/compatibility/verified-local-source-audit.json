@@ -1,0 +1,821 @@
+{
+  "adapter_fingerprint": "098a900211f1803e2723634325061b6185b1d5e2fb20e13e8698d42097910f32",
+  "passed": true,
+  "revisions": [
+    {
+      "label": "26.10.1",
+      "passed": true,
+      "checks": [
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::set(",
+          "status": "byte_exact",
+          "sha256": "c1518a89f60eb1b876a7555c3652806911f7f955daff666d23ccfe52b58d22d0"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::clearSamples(",
+          "status": "byte_exact",
+          "sha256": "cf06a4255b685b011a21bfb6b19657fc6329b058860a1178a766c71da53dc336"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::reset(",
+          "status": "byte_exact",
+          "sha256": "8b69b79443818c0d5d1a8d4164ca4012efe98c5f9afd6f7f5de67d51d37fcbca"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "int PowerBuffer::getReadings(",
+          "status": "byte_exact",
+          "sha256": "672ccb5ac0a0816f30daacf22e76dd1f905b4509a4ecffce812b0705b1dde5cf"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::processPowerValue(",
+          "status": "byte_exact",
+          "sha256": "d77d3be1f5090aca16109bd5e85391a1e1c14df2f746f7584583ec7d2a834958"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::newEntry(",
+          "status": "byte_exact",
+          "sha256": "abcc5307275b0a64142b23672bd2b7dce99e87079484cd5a165f47ae3acb93cd"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::setStepperMinMax(",
+          "status": "byte_exact",
+          "sha256": "216e2236b8d0fae293c9b4553a8b9593c1069036a35bd38f1b4ac2787c03964f"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::clearRuntime(",
+          "status": "byte_exact",
+          "sha256": "f2e009dafbae5bcf43f7064f72b2fcd4a3c8721fd323af12c8c542ae6e0b5caf"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "bool PowerTable::reset(",
+          "status": "byte_exact",
+          "sha256": "5a1bbdebfdee432946b621dc835dd9c1417fecacde4c56ac19b33d499f467455"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "void SS2K::moveStepper(",
+          "status": "byte_exact",
+          "sha256": "e28dedcb62af0469322d7d9f8bf893c80268f47a38aef67887144b06ee97c1c2"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "static int getScaledHomingSensitivity(",
+          "status": "byte_exact",
+          "sha256": "cafa044bb72ef3d6fa679c760b30deb356e5e2212a1984936c2aa0eb74ff9217"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "static HomingSgBaseline getHomingSgBaseline(",
+          "status": "byte_exact",
+          "sha256": "c1611dd7f14e5e6e19c6e1b315d8d254ee3e821ec611d60061b59d17608d5d46"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "bool SS2K::_findEndStop(",
+          "status": "byte_exact",
+          "sha256": "25aabf86f952418abd214722d2cf563d85b91f353b5f9bfe38eebee2ec5c321a"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "static void notifyCB(",
+          "status": "byte_exact",
+          "sha256": "5f6e44a82e07552d03b440e54ba916fa39fb8541b737b8ad30dc04773b053f61"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "static bool subscribeToCharacteristic(",
+          "status": "byte_exact",
+          "sha256": "31d24c7bbd56d339347282e4d3c15e7d457beddc7b166946a059bba6a82e10ff"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "bool subscribeToAllNotifications(",
+          "status": "byte_exact",
+          "sha256": "68eb3a148e1178a3d85e20411699ca7c098f8620c514234fc4e1e3a89bab4fcf"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void MyClientCallback::onDisconnect(",
+          "status": "byte_exact",
+          "sha256": "b60c0e14226de3278d0cb173cd34ac9cd254cf0a4d649206b5fe94b639b9eee9"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::set(",
+          "status": "byte_exact",
+          "sha256": "22f04f46d28cb34922793b57c674fd4e67e1548f03e2abac07f89d9f569550e3"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::clearState(",
+          "status": "byte_exact",
+          "sha256": "e3e91788cb9f222bf8aa54ac11b6ca1a2c555e3cabc1ffecf9a132a10e567cfe"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::reset(",
+          "status": "byte_exact",
+          "sha256": "19c15c473ecf3e314a7373ae125bd22717b2aa5792772a0c725a7c2aeb728bc7"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "bool SpinBLEAdvertisedDevice::enqueueData(",
+          "status": "byte_exact",
+          "sha256": "944c5ddd761edc19202ee9760b5adb5198947b07231f45a88781684c18d6ee67"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "NotifyData SpinBLEAdvertisedDevice::dequeueData(",
+          "status": "byte_exact",
+          "sha256": "1ef332a848b2239f523c21f3118763584bfa58fae3c4620922abde5aff1b02e1"
+        },
+        {
+          "file": "src/BLE_Common.cpp",
+          "signature": "void BLECommunications(",
+          "status": "byte_exact",
+          "sha256": "95a58e58aa8898c22e0c466f05941bb425fc8080b6ac63405eb767e25124b31c"
+        },
+        {
+          "file": "src/SensorCollector.cpp",
+          "signature": "void collectAndSet(",
+          "status": "byte_exact",
+          "sha256": "3534a83045bfa0de6caf5c5e284ed4ef446904d423183a50e8563e54e772aa51"
+        },
+        {
+          "file": "src/BLE_Fitness_Machine_Service.cpp",
+          "signature": "void BLE_Fitness_Machine_Service::processFTMSWrite(",
+          "status": "byte_exact",
+          "sha256": "988a29c9eeb7e0accf99bacdab434327133a472e29e12d51786a4b773bc3024e"
+        },
+        {
+          "file": "src/ERG_Mode.cpp",
+          "status": "byte_exact_except_peripheral_include_removal",
+          "sha256": "8be756d8af675bc53a7f200574a725c116e0a19677c768fd6cac529ffd0cc595"
+        },
+        {
+          "file": "src/PowerTable_Helpers.cpp",
+          "status": "compiled_directly_from_clean_revision"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/SensorData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/ChronoData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/SensorDataFactory.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/CyclePowerData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/FitnessMachineIndoorBikeData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/PelotonData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/FlywheelData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/CscSensorData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/HeartRateData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/EchelonData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        }
+      ]
+    },
+    {
+      "label": "26.9.15",
+      "passed": true,
+      "checks": [
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::set(",
+          "status": "byte_exact",
+          "sha256": "86aac22d0f3bb140723c24706b1f5b8cd40857598e9eee6e3b23b133752352e4"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::clearSamples(",
+          "status": "absent_in_selected_revision"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::reset(",
+          "status": "byte_exact",
+          "sha256": "91631b629060c0ed4c4b5b122c36c4a1e97e42d780478c2aa9f89e367278a619"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "int PowerBuffer::getReadings(",
+          "status": "byte_exact",
+          "sha256": "a7c04a54bfc38c9ca96db4645cd24989a1b75e4582c0c59cbb6e2d1c46f32312"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::processPowerValue(",
+          "status": "byte_exact",
+          "sha256": "207cd5d77eb3296c221258da7c3b916f70c51fa1e73a63090d66730d0fa7b23f"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::newEntry(",
+          "status": "byte_exact",
+          "sha256": "a6a86bc2318098003e9087ea0327a7946370c2a75cc4c5993e43f32628e1aa5d"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::setStepperMinMax(",
+          "status": "byte_exact",
+          "sha256": "b7750c4621e04be819e5bef4e06a9de3af75697bc79fb0bc27cb03baa7996260"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::clearRuntime(",
+          "status": "absent_in_selected_revision"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "bool PowerTable::reset(",
+          "status": "byte_exact",
+          "sha256": "5dc81ae602c3ce695a62eec1d0f3e6cfc6f12a956d40bec55818f54a2cecce7d"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "void SS2K::moveStepper(",
+          "status": "byte_exact",
+          "sha256": "fb740c00e89e8053dd8cbd11dede9acea53b0db26e7e3d09e76001a4a22c1e11"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "static int getScaledHomingSensitivity(",
+          "status": "byte_exact",
+          "sha256": "cafa044bb72ef3d6fa679c760b30deb356e5e2212a1984936c2aa0eb74ff9217"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "static HomingSgBaseline getHomingSgBaseline(",
+          "status": "byte_exact",
+          "sha256": "c1611dd7f14e5e6e19c6e1b315d8d254ee3e821ec611d60061b59d17608d5d46"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "bool SS2K::_findEndStop(",
+          "status": "byte_exact",
+          "sha256": "7a9e0011358087cbd2833be976c20a83e9322381c9b17c904b282aa7a5862d30"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "static void notifyCB(",
+          "status": "byte_exact",
+          "sha256": "a878c3502b70688270a5715d14b8c151768688d487b9567ac79098a9cb553880"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "static bool subscribeToCharacteristic(",
+          "status": "byte_exact",
+          "sha256": "31d24c7bbd56d339347282e4d3c15e7d457beddc7b166946a059bba6a82e10ff"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "bool subscribeToAllNotifications(",
+          "status": "byte_exact",
+          "sha256": "68eb3a148e1178a3d85e20411699ca7c098f8620c514234fc4e1e3a89bab4fcf"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void MyClientCallback::onDisconnect(",
+          "status": "byte_exact",
+          "sha256": "b60c0e14226de3278d0cb173cd34ac9cd254cf0a4d649206b5fe94b639b9eee9"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::set(",
+          "status": "byte_exact",
+          "sha256": "5cbead1c2e115a5124d2dc91dfe9e6fe86bf545b0b16c0e4be43a99a88514ec4"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::clearState(",
+          "status": "byte_exact",
+          "sha256": "8d19da18cd401c56760e875caaaf94faed5d37f3b8c0a83052fa18ebf60d1d6c"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::reset(",
+          "status": "byte_exact",
+          "sha256": "19c15c473ecf3e314a7373ae125bd22717b2aa5792772a0c725a7c2aeb728bc7"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "bool SpinBLEAdvertisedDevice::enqueueData(",
+          "status": "byte_exact",
+          "sha256": "944c5ddd761edc19202ee9760b5adb5198947b07231f45a88781684c18d6ee67"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "NotifyData SpinBLEAdvertisedDevice::dequeueData(",
+          "status": "byte_exact",
+          "sha256": "1ef332a848b2239f523c21f3118763584bfa58fae3c4620922abde5aff1b02e1"
+        },
+        {
+          "file": "src/BLE_Common.cpp",
+          "signature": "void BLECommunications(",
+          "status": "byte_exact",
+          "sha256": "f6231d12f3b4d9c4ab93fc3cceb54a7142d6030763526b2faa83320a0f1b0273"
+        },
+        {
+          "file": "src/SensorCollector.cpp",
+          "signature": "void collectAndSet(",
+          "status": "byte_exact",
+          "sha256": "866976078f7391e6105d9cab0abc7b54a887cd761ad269d6cb903ea4e382dac3"
+        },
+        {
+          "file": "src/BLE_Fitness_Machine_Service.cpp",
+          "signature": "void BLE_Fitness_Machine_Service::processFTMSWrite(",
+          "status": "byte_exact",
+          "sha256": "24cde943f77310fb87834d0c22afb683ccca705987a369b783dc213d93f4d913"
+        },
+        {
+          "file": "src/ERG_Mode.cpp",
+          "status": "byte_exact_except_peripheral_include_removal",
+          "sha256": "be155015ea5890f808663adfd6820a6add5600b6f33f6ea8b398742c1972282f"
+        },
+        {
+          "file": "src/PowerTable_Helpers.cpp",
+          "status": "compiled_directly_from_clean_revision"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/SensorData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/ChronoData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/SensorDataFactory.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/CyclePowerData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/FitnessMachineIndoorBikeData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/PelotonData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/FlywheelData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/CscSensorData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/HeartRateData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/EchelonData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        }
+      ]
+    },
+    {
+      "label": "26.8.23",
+      "passed": true,
+      "checks": [
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::set(",
+          "status": "byte_exact",
+          "sha256": "86aac22d0f3bb140723c24706b1f5b8cd40857598e9eee6e3b23b133752352e4"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::clearSamples(",
+          "status": "absent_in_selected_revision"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::reset(",
+          "status": "byte_exact",
+          "sha256": "91631b629060c0ed4c4b5b122c36c4a1e97e42d780478c2aa9f89e367278a619"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "int PowerBuffer::getReadings(",
+          "status": "byte_exact",
+          "sha256": "a7c04a54bfc38c9ca96db4645cd24989a1b75e4582c0c59cbb6e2d1c46f32312"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::processPowerValue(",
+          "status": "byte_exact",
+          "sha256": "f4958777cc75a18a498b873350a6e9033e6ac080be4cd7b50b74f742b48ae198"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::newEntry(",
+          "status": "byte_exact",
+          "sha256": "a6a86bc2318098003e9087ea0327a7946370c2a75cc4c5993e43f32628e1aa5d"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::setStepperMinMax(",
+          "status": "byte_exact",
+          "sha256": "77bf2087ef5e30703b31f2af877038d31fe2f0612ab1e7b3d82c56c885537f8d"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::clearRuntime(",
+          "status": "absent_in_selected_revision"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "bool PowerTable::reset(",
+          "status": "byte_exact",
+          "sha256": "5dc81ae602c3ce695a62eec1d0f3e6cfc6f12a956d40bec55818f54a2cecce7d"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "void SS2K::moveStepper(",
+          "status": "byte_exact",
+          "sha256": "fb740c00e89e8053dd8cbd11dede9acea53b0db26e7e3d09e76001a4a22c1e11"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "static int getScaledHomingSensitivity(",
+          "status": "byte_exact",
+          "sha256": "7814c26de58e04f07b5ff75f30d5f5c260bba947269e1626eeee05ed49a4df26"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "static HomingSgBaseline getHomingSgBaseline(",
+          "status": "byte_exact",
+          "sha256": "6be23c4122c4788facfe58d51f9cd5a491e227fe4ee8e68589fd7d93d7fb4cda"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "bool SS2K::_findEndStop(",
+          "status": "byte_exact",
+          "sha256": "1cddeba31c49a7781846c5f655590b73f05fc7a98b12d66af11eda1d15251b2d"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "static void notifyCB(",
+          "status": "byte_exact",
+          "sha256": "a878c3502b70688270a5715d14b8c151768688d487b9567ac79098a9cb553880"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "static bool subscribeToCharacteristic(",
+          "status": "absent_in_selected_revision"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "bool subscribeToAllNotifications(",
+          "status": "byte_exact",
+          "sha256": "8cc478057eb205625c0e8e46b497f9c3f50738315f9a35719e93517d47e7a9f2"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void MyClientCallback::onDisconnect(",
+          "status": "byte_exact",
+          "sha256": "b60c0e14226de3278d0cb173cd34ac9cd254cf0a4d649206b5fe94b639b9eee9"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::set(",
+          "status": "byte_exact",
+          "sha256": "5cbead1c2e115a5124d2dc91dfe9e6fe86bf545b0b16c0e4be43a99a88514ec4"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::clearState(",
+          "status": "byte_exact",
+          "sha256": "8d19da18cd401c56760e875caaaf94faed5d37f3b8c0a83052fa18ebf60d1d6c"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::reset(",
+          "status": "byte_exact",
+          "sha256": "19c15c473ecf3e314a7373ae125bd22717b2aa5792772a0c725a7c2aeb728bc7"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "bool SpinBLEAdvertisedDevice::enqueueData(",
+          "status": "byte_exact",
+          "sha256": "944c5ddd761edc19202ee9760b5adb5198947b07231f45a88781684c18d6ee67"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "NotifyData SpinBLEAdvertisedDevice::dequeueData(",
+          "status": "byte_exact",
+          "sha256": "1ef332a848b2239f523c21f3118763584bfa58fae3c4620922abde5aff1b02e1"
+        },
+        {
+          "file": "src/BLE_Common.cpp",
+          "signature": "void BLECommunications(",
+          "status": "byte_exact",
+          "sha256": "f6231d12f3b4d9c4ab93fc3cceb54a7142d6030763526b2faa83320a0f1b0273"
+        },
+        {
+          "file": "src/SensorCollector.cpp",
+          "signature": "void collectAndSet(",
+          "status": "byte_exact",
+          "sha256": "866976078f7391e6105d9cab0abc7b54a887cd761ad269d6cb903ea4e382dac3"
+        },
+        {
+          "file": "src/BLE_Fitness_Machine_Service.cpp",
+          "signature": "void BLE_Fitness_Machine_Service::processFTMSWrite(",
+          "status": "byte_exact",
+          "sha256": "e112957bfe9131407376983f1326605daa79110c3a909b60820c5ee8bf28a739"
+        },
+        {
+          "file": "src/ERG_Mode.cpp",
+          "status": "byte_exact_except_peripheral_include_removal",
+          "sha256": "b3319b2cff72e2a1affdd8943f256a931e39f27eee07f3ef4a1e6f327df80299"
+        },
+        {
+          "file": "src/PowerTable_Helpers.cpp",
+          "status": "byte_exact_except_native_test_wall_clock_stub_removal"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/SensorData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/ChronoData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/SensorDataFactory.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/CyclePowerData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/FitnessMachineIndoorBikeData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/PelotonData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/FlywheelData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/CscSensorData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/HeartRateData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/EchelonData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        }
+      ]
+    },
+    {
+      "label": "782c2b5",
+      "passed": true,
+      "checks": [
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::set(",
+          "status": "byte_exact",
+          "sha256": "c1518a89f60eb1b876a7555c3652806911f7f955daff666d23ccfe52b58d22d0"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::clearSamples(",
+          "status": "byte_exact",
+          "sha256": "cf06a4255b685b011a21bfb6b19657fc6329b058860a1178a766c71da53dc336"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerBuffer::reset(",
+          "status": "byte_exact",
+          "sha256": "8b69b79443818c0d5d1a8d4164ca4012efe98c5f9afd6f7f5de67d51d37fcbca"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "int PowerBuffer::getReadings(",
+          "status": "byte_exact",
+          "sha256": "672ccb5ac0a0816f30daacf22e76dd1f905b4509a4ecffce812b0705b1dde5cf"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::processPowerValue(",
+          "status": "byte_exact",
+          "sha256": "d77d3be1f5090aca16109bd5e85391a1e1c14df2f746f7584583ec7d2a834958"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::newEntry(",
+          "status": "byte_exact",
+          "sha256": "abcc5307275b0a64142b23672bd2b7dce99e87079484cd5a165f47ae3acb93cd"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::setStepperMinMax(",
+          "status": "byte_exact",
+          "sha256": "216e2236b8d0fae293c9b4553a8b9593c1069036a35bd38f1b4ac2787c03964f"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "void PowerTable::clearRuntime(",
+          "status": "byte_exact",
+          "sha256": "f2e009dafbae5bcf43f7064f72b2fcd4a3c8721fd323af12c8c542ae6e0b5caf"
+        },
+        {
+          "file": "src/Power_Table.cpp",
+          "signature": "bool PowerTable::reset(",
+          "status": "byte_exact",
+          "sha256": "5a1bbdebfdee432946b621dc835dd9c1417fecacde4c56ac19b33d499f467455"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "void SS2K::moveStepper(",
+          "status": "byte_exact",
+          "sha256": "e28dedcb62af0469322d7d9f8bf893c80268f47a38aef67887144b06ee97c1c2"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "static int getScaledHomingSensitivity(",
+          "status": "byte_exact",
+          "sha256": "cafa044bb72ef3d6fa679c760b30deb356e5e2212a1984936c2aa0eb74ff9217"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "static HomingSgBaseline getHomingSgBaseline(",
+          "status": "byte_exact",
+          "sha256": "c1611dd7f14e5e6e19c6e1b315d8d254ee3e821ec611d60061b59d17608d5d46"
+        },
+        {
+          "file": "src/Stepper.cpp",
+          "signature": "bool SS2K::_findEndStop(",
+          "status": "byte_exact",
+          "sha256": "25aabf86f952418abd214722d2cf563d85b91f353b5f9bfe38eebee2ec5c321a"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "static void notifyCB(",
+          "status": "byte_exact",
+          "sha256": "5f6e44a82e07552d03b440e54ba916fa39fb8541b737b8ad30dc04773b053f61"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "static bool subscribeToCharacteristic(",
+          "status": "byte_exact",
+          "sha256": "31d24c7bbd56d339347282e4d3c15e7d457beddc7b166946a059bba6a82e10ff"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "bool subscribeToAllNotifications(",
+          "status": "byte_exact",
+          "sha256": "68eb3a148e1178a3d85e20411699ca7c098f8620c514234fc4e1e3a89bab4fcf"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void MyClientCallback::onDisconnect(",
+          "status": "byte_exact",
+          "sha256": "b60c0e14226de3278d0cb173cd34ac9cd254cf0a4d649206b5fe94b639b9eee9"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::set(",
+          "status": "byte_exact",
+          "sha256": "22f04f46d28cb34922793b57c674fd4e67e1548f03e2abac07f89d9f569550e3"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::clearState(",
+          "status": "byte_exact",
+          "sha256": "e3e91788cb9f222bf8aa54ac11b6ca1a2c555e3cabc1ffecf9a132a10e567cfe"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "void SpinBLEAdvertisedDevice::reset(",
+          "status": "byte_exact",
+          "sha256": "19c15c473ecf3e314a7373ae125bd22717b2aa5792772a0c725a7c2aeb728bc7"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "bool SpinBLEAdvertisedDevice::enqueueData(",
+          "status": "byte_exact",
+          "sha256": "944c5ddd761edc19202ee9760b5adb5198947b07231f45a88781684c18d6ee67"
+        },
+        {
+          "file": "src/BLE_Client.cpp",
+          "signature": "NotifyData SpinBLEAdvertisedDevice::dequeueData(",
+          "status": "byte_exact",
+          "sha256": "1ef332a848b2239f523c21f3118763584bfa58fae3c4620922abde5aff1b02e1"
+        },
+        {
+          "file": "src/BLE_Common.cpp",
+          "signature": "void BLECommunications(",
+          "status": "byte_exact",
+          "sha256": "95a58e58aa8898c22e0c466f05941bb425fc8080b6ac63405eb767e25124b31c"
+        },
+        {
+          "file": "src/SensorCollector.cpp",
+          "signature": "void collectAndSet(",
+          "status": "byte_exact",
+          "sha256": "3534a83045bfa0de6caf5c5e284ed4ef446904d423183a50e8563e54e772aa51"
+        },
+        {
+          "file": "src/BLE_Fitness_Machine_Service.cpp",
+          "signature": "void BLE_Fitness_Machine_Service::processFTMSWrite(",
+          "status": "byte_exact",
+          "sha256": "ea66a5264bb173c2530316c700c2f02d2482fa9c839e2c3d4d991a68161a9206"
+        },
+        {
+          "file": "src/ERG_Mode.cpp",
+          "status": "byte_exact_except_peripheral_include_removal",
+          "sha256": "aabb60f452187eb3bc6dfb249e3eb51ae97d26bff561c4bdbbc924f68fb3fb4a"
+        },
+        {
+          "file": "src/PowerTable_Helpers.cpp",
+          "status": "compiled_directly_from_clean_revision"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/SensorData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/ChronoData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/SensorDataFactory.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/CyclePowerData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/FitnessMachineIndoorBikeData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/PelotonData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/FlywheelData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/CscSensorData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/HeartRateData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        },
+        {
+          "file": "lib/SS2K/src/sensors/EchelonData.cpp",
+          "status": "byte_exact_except_virtual_clock_seam"
+        }
+      ]
+    }
+  ]
+}

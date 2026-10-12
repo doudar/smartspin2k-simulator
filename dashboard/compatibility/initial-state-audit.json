@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "label": "26.10.1",
+      "new_process_empty_table": true,
+      "homed_flag_preserved": true,
+      "cells": 300
+    },
+    {
+      "label": "26.9.15",
+      "new_process_empty_table": true,
+      "homed_flag_preserved": true,
+      "cells": 300
+    },
+    {
+      "label": "26.8.23",
+      "new_process_empty_table": true,
+      "homed_flag_preserved": true,
+      "cells": 300
+    },
+    {
+      "label": "782c2b5",
+      "new_process_empty_table": true,
+      "homed_flag_preserved": true,
+      "cells": 300
+    }
+  ]
+}

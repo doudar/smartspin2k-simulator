@@ -1,0 +1,62 @@
+{
+  "base_firmware_adapter_sha": "f836c058d5ab474c36ec6f9384256db70596ac5c",
+  "base_adapter_fingerprint": "1c8c45423e7cacae606a3c8142007427bb78b74bc56ecd0c9dedc46a13ceeb04",
+  "compatible_adapter_fingerprint": "098a900211f1803e2723634325061b6185b1d5e2fb20e13e8698d42097910f32",
+  "patch_path": "history-adapter.patch",
+  "patch_sha256": "cb80bec989097c2a012024883afb367a049424a862e41c552d0beeac0afa7115",
+  "files": [
+    {
+      "path": "scripts/erg_sim/bridge.py",
+      "sha256": "170c73f8b8a36e40e86e16ecc7602fd5379065cc9940f4a9dba1cc3489604a05",
+      "changed": true
+    },
+    {
+      "path": "scripts/erg_sim/native.cpp",
+      "sha256": "3a05a855669c5ff6b773e0a7eeb1f68f014a72c88eb2f81614bd52c47a4be99e",
+      "changed": true
+    },
+    {
+      "path": "scripts/erg_sim/virtual_ble.py",
+      "sha256": "f255760742dd3bd8779db7607217a0511bbab64fb04fa1d13ba4ffd61e482113",
+      "changed": true
+    },
+    {
+      "path": "scripts/erg_sim/virtual_ble_facade.h",
+      "sha256": "b73865b54c8dab911f245a1b27d3c01f90f3ebf7eac9007c72518b830cd229f7",
+      "changed": true
+    },
+    {
+      "path": "scripts/erg_sim/virtual_ble_runtime.inc",
+      "sha256": "c8bb817b15048bc2a4bc7f8e2fb7a056fc2206f425409724876baa08cdda3dd2",
+      "changed": true
+    },
+    {
+      "path": "scripts/erg_sim/virtual_ftms.py",
+      "sha256": "ba3998843ffbb3af61b66a3f78cef20602569b9942e5cf5e666f8530d555ecdc",
+      "changed": true
+    },
+    {
+      "path": "scripts/erg_sim/virtual_ftms.hpp",
+      "sha256": "cafd119d2c8a7a783266396ab96c5adf2e64a5b9c6b5bf92c7e0dfbf6453efb4",
+      "changed": true
+    }
+  ],
+  "production_controller_changes": false,
+  "compiler_standard": "c++20",
+  "legacy_uuid_helpers_source": {
+    "sha": "082d1ee26ddb009d5132547087f77be03d1b0ab7",
+    "path": "lib/ArduinoCompat/src/NimBLEUUID.cpp",
+    "symbols": [
+      "ble_uuid_cmp",
+      "ble_uuid_to_str"
+    ]
+  },
+  "source_audit": "production-source-audit.json",
+  "initial_state_audit": "initial-state-audit.json",
+  "toolchain": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "g++": "g++ (Debian 14.2.0-19) 14.2.0",
+    "gcc": "gcc (Debian 14.2.0-19) 14.2.0"
+  }
+}
