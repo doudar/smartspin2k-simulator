@@ -16,6 +16,14 @@ class DashboardTests(unittest.TestCase):
         with zipfile.ZipFile(self.dest/'evidence.zip')as z:self.assertEqual(z.namelist(),['comparison.json'])
         self.assertIn('textContent', (self.root/'site/app.js').read_text());self.assertNotIn('innerHTML', (self.root/'site/app.js').read_text())
         self.assertEqual(json.loads((self.root/'site/history.json').read_text())[0]['status'],'complete')
+    def test_rendered_retention_copy_matches_release_and_legacy_storage(self):
+        m.materialize(self.source,self.dest,'run-1',{})
+        m.build(self.history,self.root/'site')
+        html=(self.root/'site/index.html').read_text()
+        self.assertIn('New evidence ZIPs are retained as verified GitHub Release assets',html)
+        self.assertIn('run summaries and legacy ZIPs remain in the repository’s gh-pages history',html)
+        self.assertNotIn('Evidence ZIPs and run summaries are retained in the repository’s gh-pages history',html)
+
     def test_branch_display_keeps_immutable_id(self):
         self.payload['firmware']={'candidate':{'commit':'782c2b5e303115f90bf8f81b724da5717362de39'}}
         (self.source/'comparison.json').write_text(json.dumps(self.payload))
