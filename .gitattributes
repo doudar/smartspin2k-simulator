@@ -1,0 +1,4 @@
+*.json text eol=lf
+*.py text eol=lf
+# Preserve upstream workout bytes; the cadence sidecar verifies its digest.
+ss2k_sim/workouts/*.zwo whitespace=-blank-at-eol

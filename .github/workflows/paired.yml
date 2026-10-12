@@ -1,0 +1,54 @@
+name: Paired firmware experiment
+on:
+  workflow_dispatch:
+    inputs:
+      adapter_sha:
+        description: 'Exact 40-character firmware commit containing the tested adapter'
+        required: true
+        default: f836c058d5ab474c36ec6f9384256db70596ac5c
+      candidate_ref:
+        description: 'Candidate firmware ref (resolved commit recorded in evidence)'
+        default: erg-spike-gate
+        required: true
+permissions:
+  contents: read
+jobs:
+  paired:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: simulator
+      - name: Require immutable adapter commit
+        env:
+          ADAPTER_SHA: ${{ inputs.adapter_sha }}
+        run: '[[ "$ADAPTER_SHA" =~ ^[0-9a-f]{40}$ ]]'
+      - uses: actions/checkout@v4
+        with:
+          repository: doudar/SmartSpin2k
+          ref: ${{ inputs.adapter_sha }}
+          path: adapter
+      - uses: actions/checkout@v4
+        with:
+          repository: doudar/SmartSpin2k
+          ref: 082d1ee26ddb009d5132547087f77be03d1b0ab7
+          path: baseline
+      - uses: actions/checkout@v4
+        with:
+          repository: doudar/SmartSpin2k
+          ref: ${{ inputs.candidate_ref }}
+          path: candidate
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e ./simulator
+      - name: Closed-loop stuck-motor negative control
+        env:
+          SS2K_FIRMWARE_ROOT: ${{ github.workspace }}/adapter
+        run: python -m unittest discover -s simulator/tests -p test_packet_ride.py -v
+      - run: python -m ss2k_sim compare --firmware-root adapter --baseline-root baseline --candidate-root candidate --output output
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paired-evidence
+          path: output
