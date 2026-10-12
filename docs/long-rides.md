@@ -29,12 +29,13 @@ sensor schedules, seed and immutable initial fixture are used for both builds.
 - **Partial:** an actual intermediate training snapshot with some, but not all,
   tested-range cells supported.
 - **Fully learned tested range:** a real training snapshot with readings >= 2
-  and a valid stored position at every one of the 15 grid points: 150, 180, 210,
-  240 and 270 W at 80, 85 and 90 rpm. This is deliberately **not a claim that
+  and a valid stored position at every one of the 25 grid points: 150, 180, 210,
+  240 and 270 W at 75, 80, 85, 90 and 95 rpm. The padding covers the nominal
+  80–90 rpm probes plus their ±1.2 rpm modeled drift. This is deliberately **not a claim that
   all 300 firmware cells, every possible cadence, or hardware behavior are known**.
 
 Fixture training is a separate 90-minute ride through unmodified production
-learning, using seed 137 and six-minute holds at those grid points. No table
+learning, using seed 137 and 216-second holds at those grid points. No table
 cell is calculated from the physical model or inserted to manufacture coverage.
 If training does not earn complete coverage, the tool reports that and does not
 write a full fixture. Fixture hashes, training time, segments, seed, firmware,
@@ -64,8 +65,12 @@ gain counts are sampled production logs, **not exhaustive lookup-call counts**.
 Trusted seek events and time spent seeking are also reported. No arbitrary
 learning-improvement threshold is used and later performance need not improve.
 
-`--stress` adds a 12-second power-packet dropout and FTMS pause/resume away from
-the repeated probes, without resetting state. Whole-ride scores include these
+`--stress` adds a 12-second power-packet dropout and a 60-second zero-cadence
+rider cue away from the repeated probes, without restarting controller/table state.
+The rider decelerates and accelerates at its configured bounded rates; cadence is
+not instantaneously forced to zero. Real FTMS pause/resume packets are sent too,
+but those packets only change training/status in current production. The physical
+pedaling interruption exercises actual low-cadence ERG and learning gates. Whole-ride scores include these
 interruptions rather than hiding them. The existing provisional engineering
 budgets apply to whole rides and each probe, including delivered-sensor scores;
 a long steady section cannot erase a failing probe. These budgets remain

@@ -17,17 +17,28 @@ class LongRideTests(unittest.TestCase):
                 for t in range(360):
                     self.assertEqual(workout.at(window['start_s']+t),long_workout(30)[0].at(t))
         with self.assertRaises(ValueError): long_workout(120)
+    def test_physical_pause_is_separate_from_identical_probes(self):
+        for minutes in (30,60,90):
+            workout,windows=long_workout(minutes,stress=True)
+            at=minutes*60*.25+30
+            self.assertEqual(workout.at(at)[1],0)
+            self.assertEqual(workout.at(at+59)[1],0)
+            self.assertGreater(workout.at(at+60)[1],0)
+            self.assertEqual(workout.duration,minutes*60)
+            normal,_=long_workout(minutes)
+            for w in windows:
+                for t in range(360): self.assertEqual(workout.at(w['start_s']+t),normal.at(w['start_s']+t))
     def test_full_is_observed_range_not_time_or_projection(self):
         table=self.table()
         self.assertEqual(coverage(table)['supported_cells'],0)
-        for cad in (80,85,90):
+        for cad in (75,80,85,90,95):
             for watt in (150,180,210,240,270):
                 table['cells'][((cad-60)//5)*30+watt//30]=[1000,1]
         self.assertFalse(coverage(table)['fully_supported_tested_range'])
         for cell in table['cells']:
             if cell[0]!=-32768: cell[1]=2
         self.assertTrue(coverage(table)['fully_supported_tested_range'])
-        self.assertEqual(coverage(table)['supported_cells'],15)
+        self.assertEqual(coverage(table)['supported_cells'],25)
     def test_snapshot_preload_and_pause_do_not_restart_process(self):
         table=self.table(); calls=[]
         class Bridge:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Workflow-event ingestion. Inputs affect data only, never a code checkout."""
-import argparse, datetime, hashlib, json, os
+import argparse, datetime, hashlib, json, os, tempfile
 from pathlib import Path
 from build import SAFE, build, materialize, read_json, valid_tree
 
@@ -12,10 +12,17 @@ def main():
         identity=f'actions-{run_id}-{attempt}'
         if not (a.history/identity).exists():
             a.input.mkdir(parents=True,exist_ok=True)
+            from longride_import import prepare
+            stage=Path(tempfile.mkdtemp(prefix='longride-evidence-'))
+            try: prepared=prepare(a.input,stage,identity)
+            except (ValueError,KeyError,TypeError,json.JSONDecodeError,UnicodeError,OSError):
+                rejected=stage/'longride-rejected';rejected.mkdir()
+                (rejected/'comparison.json').write_text(json.dumps({'status':'incomplete','passed':False,'runs':[],'error':'Long-ride batch validation failed. Unsafe payload was not published; inspect the Actions artifact.'}))
+                prepared=[rejected]
             # One artifact may hold a bounded release matrix; each release gets its own immutable ID.
             children=[p for p in a.input.iterdir() if p.is_dir() and ((p/'comparison.json').is_file() or (p/'run-metadata.json').is_file())]
-            sources=children if children and not (a.input/'comparison.json').exists() else [a.input]
-            if len(sources)>10: raise ValueError('Historical batch too large')
+            sources=prepared if prepared is not None else children if children and not (a.input/'comparison.json').exists() else [a.input]
+            if len(sources)>28: raise ValueError('Experiment batch too large')
             for source in sources:
                 suffix=source.name if SAFE.fullmatch(source.name) else hashlib.sha256(source.name.encode()).hexdigest()[:12]
                 rid=identity+('-'+suffix if source!=a.input else '')

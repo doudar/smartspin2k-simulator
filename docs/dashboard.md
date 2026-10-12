@@ -111,3 +111,36 @@ archived candidate CSVs. Existing `runs/` summaries, raw ZIPs, comparison JSON a
 checksums stay byte-for-byte unchanged. No experiment is rerun and no score changes.
 Missing motor columns are unavailable; missing/nonfinite samples create gaps, never
 inferred positions. The display decimation preserves gap markers and endpoints.
+
+## Continuous long rides and starting-table evidence
+
+The **Long ride learning experiment** workflow trains one table through the real
+production learner, then runs30/60/90-minute continuous paired rides with empty,
+partial and fully supported starting fixtures. "Fully learned" means all25
+measured grid points at150–270W and75–95rpm, padding the nominal80–90rpm rider
+cue for its cadence variability. It never means every cell of the300-cell table.
+Both revisions receive the identical earned fixture; no plant-to-table oracle or
+controller replacement is used. RAM import is not a flash-persistence test.
+
+Every case gets an immutable evidence record. The scenario remains `long_ride`
+so switching duration or starting state preserves scenario/seed selection. The
+original artifact folder names remain in the ZIP and the manifest records their
+mapping. One shared training archive is linked from all nine cases rather than
+copied into each. It includes original training traces, table snapshots and
+partial/full fixture files. Missing or incomplete requested cases remain visible.
+
+The learning panel shows initial/final measured support and repeated early,
+middle and late probes. Whole-ride plus all three probe decisions, for both plant
+and delivered-sensor signals, determine aggregate quality results. Log counts
+are observations/insertion attempts or sampled gain messages, not counts of
+accepted table inserts or exhaustive lookups. Comparisons are descriptive:
+learning is not assumed to improve performance. The stress path includes a12s
+sensor outage and60s actual cadence-zero rider pause, with FTMS status procedures,
+placed away from the identical probes.
+
+Long-ride display traces retain endpoints, bounded target transitions and
+per-bucket extrema to preserve brief overshoots; raw20ms CSV files remain complete.
+Motor traces use the same extrema-preserving approach. Archives retain the
+existing32MiB/file and200MiB/case bounds; measured90-minute traces fit those
+bounds. Build directories and executables are excluded. Unsafe or oversized
+payloads are reported as incomplete, never executed or silently truncated.

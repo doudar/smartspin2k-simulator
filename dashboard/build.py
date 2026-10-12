@@ -15,6 +15,7 @@ MAX_RUN = 200 * 1024 * 1024
 KNOWN_TESTED_REFS = {'782c2b5e303115f90bf8f81b724da5717362de39':'erg-spike-gate'}
 
 def read_json(path):
+    if path.is_symlink() or any(parent.is_symlink() for parent in path.parents): raise ValueError('Symlink in JSON path')
     if path.stat().st_size > MAX_FILE: raise ValueError('JSON too large')
     return json.loads(path.read_text(), parse_constant=lambda x: (_ for _ in ()).throw(ValueError('Nonfinite JSON')))
 
@@ -34,6 +35,7 @@ def valid_tree(value, depth=0):
     elif value is not None and not isinstance(value,(str,int,float,bool)): raise ValueError('Invalid value')
 
 def collect(source):
+    if source.is_symlink(): raise ValueError('Symlink evidence root')
     files={}; total=0
     for p in sorted(source.rglob('*')):
         if p.is_symlink(): raise ValueError('Symlink in evidence')
@@ -59,6 +61,7 @@ def validate(manifest):
     for row in runs:
         if not isinstance(row,dict): raise ValueError('Run must be an object')
         if not SAFE.fullmatch(row.get('scenario','')) or type(row.get('seed')) is not int: raise ValueError('Invalid scenario/seed')
+        if row.get('artifact_key') is not None and (not isinstance(row['artifact_key'],str) or not SAFE.fullmatch(row['artifact_key'])): raise ValueError('Invalid artifact key')
         key=(row['scenario'],row['seed'])
         if key in seen: raise ValueError('Duplicate scenario/seed')
         seen.add(key)
@@ -70,21 +73,43 @@ def validate(manifest):
             if not isinstance(failures,list) or any(not isinstance(f,str) for f in failures): raise ValueError('Invalid failures')
     return manifest
 
-def chart(raw):
+def decimate_extrema(rows,columns=(2,3),transition_column=1,max_points=1801):
+    """Keep endpoints, target edges and each bucket's extrema, in time order."""
+    if len(rows)<=max_points:return rows
+    anchors={0,len(rows)-1}
+    if transition_column is not None:
+        for i in range(1,len(rows)):
+            if rows[i][transition_column]!=rows[i-1][transition_column]:anchors.update((i-1,i))
+    # Unbounded adversarial target edges cannot enlarge the renderer payload.
+    if len(anchors)>600:
+        ordered=sorted(anchors);anchors={ordered[round(i*(len(ordered)-1)/599)] for i in range(600)}
+    slots=4+2*len(columns)
+    buckets=max(1,(max_points-len(anchors))//slots)
+    for b in range(buckets):
+        start=b*len(rows)//buckets;end=(b+1)*len(rows)//buckets
+        anchors.update((start,end-1))
+        for col in columns:
+            finite=[i for i in range(start,end) if rows[i][col] is not None]
+            if finite:anchors.update((min(finite,key=lambda i:rows[i][col]),max(finite,key=lambda i:rows[i][col])))
+        missing=[i for i in range(start,end) if any(rows[i][col] is None for col in columns)]
+        if missing:anchors.update((missing[0],missing[-1]))
+    return [rows[i] for i in sorted(anchors)]
+
+def chart(raw,*,preserve_extrema=False):
     rows=[]
     for n,row in enumerate(csv.DictReader(io.StringIO(raw.decode('utf8')))):
         if n>1000000: raise ValueError('Trace too long')
         vals=[float(row[k]) for k in ('time_s','target_w','power_w','latest_delivered_sensor_power_w')]
         if not all(math.isfinite(v) and abs(v)<1e9 for v in vals): raise ValueError('Invalid trace')
         rows.append(vals)
-    # Display-only decimation. Metrics are original full-clock scores; full CSV is archived.
+    if preserve_extrema:return decimate_extrema(rows)
     step=max(1,math.ceil(len(rows)/1800))
     return rows[::step]+([rows[-1]] if rows and (len(rows)-1)%step else [])
 
 # Versioned, reproducible display data lives outside immutable evidence runs.
 MOTOR_RENDERER = 'motor-v1'
 
-def motor_chart(raw):
+def motor_chart(raw,*,preserve_extrema=False):
     rows=[]
     reader=csv.DictReader(io.StringIO(raw.decode('utf8')))
     if not reader.fieldnames or 'motor_steps' not in reader.fieldnames:
@@ -97,6 +122,7 @@ def motor_chart(raw):
         except (ValueError,TypeError): position=None
         if position is not None and (not math.isfinite(position) or abs(position)>=1e9): position=None
         rows.append([t,position])
+    if preserve_extrema:return decimate_extrema(rows,columns=(1,),transition_column=None)
     step=max(1,math.ceil(len(rows)/1800))
     # Preserve missing-data gaps even when their rows fall between display samples.
     result=[[rows[i][0], rows[i][1] if all(r[1] is not None for r in rows[max(0,i-step+1):i+1]) else None] for i in range(0,len(rows),step)]
@@ -110,11 +136,12 @@ def motor_display(run,data):
         if len(z.infolist())>10000: raise ValueError('Too many evidence entries')
         for row in data['comparison'].get('runs',[]):
             key=f"{row['scenario']}-{row['seed']}"
-            name=f'candidate/{key}/trace.csv'
+            artifact_key=row.get('artifact_key',key)
+            name=f'candidate/{artifact_key}/trace.csv'
             matches=[entry for entry in z.infolist() if entry.filename==name]
             if not matches: continue
             if len(matches)!=1 or matches[0].file_size>MAX_FILE: raise ValueError('Invalid motor evidence')
-            result['traces'][key]=motor_chart(z.read(matches[0]))
+            result['traces'][key]=motor_chart(z.read(matches[0]),preserve_extrema=data['comparison'].get('experiment')=='continuous-long-ride-v1')
     return result
 
 def validate_metadata(metadata):
@@ -140,8 +167,9 @@ def materialize(source, dest, run_id, metadata):
             key=f"{row['scenario']}-{row['seed']}"
             summary['traces'][key]={}
             for variant in ('baseline','candidate'):
-                name=f'{variant}/{key}/trace.csv'
-                if name in files: summary['traces'][key][variant]=chart(files[name])
+                artifact_key=row.get('artifact_key',key)
+                name=f'{variant}/{artifact_key}/trace.csv'
+                if name in files: summary['traces'][key][variant]=chart(files[name],preserve_extrema=manifest.get('experiment')=='continuous-long-ride-v1')
         (dest/'data.json').write_text(json.dumps(summary,allow_nan=False,separators=(',',':')))
         (dest/'comparison.json').write_bytes(files['comparison.json'])
         (dest/'SHA256SUMS.txt').write_text('\n'.join(f'{hashlib.sha256(data).hexdigest()}  {name}' for name,data in files.items())+'\n')
@@ -167,6 +195,7 @@ def build(history,output):
         (display/(run.name+'.json')).write_text(json.dumps(motor,allow_nan=False,separators=(',',':')))
         candidate=data['comparison'].get('firmware',{}).get('candidate',{}).get('commit')
         display_ref=data['metadata'].get('release_tag') or data['metadata'].get('candidate_ref') or KNOWN_TESTED_REFS.get(candidate) or ('commit '+candidate[:12] if isinstance(candidate,str) else 'Unrecorded ref')
+        if data['metadata'].get('evidence_only') is True: continue
         entries.append({'id':run.name,'metadata':data['metadata'],'display_ref':display_ref,'candidate_commit':candidate,'status':data['comparison']['status'],'pairs':len(data['comparison'].get('runs',[]))})
     for name in ('index.html','app.js','style.css'): shutil.copyfile(Path(__file__).parent/name,output/name)
     template=(output/'index.html').read_text()

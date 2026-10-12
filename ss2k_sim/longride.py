@@ -13,7 +13,7 @@ import numpy as np
 from .adapter import load_adapter, source_provenance, file_fingerprint
 from .cli import BASELINE_SHA, PACKAGE
 from .model import BikeConfig
-from .performance import summarize, compare
+from .performance import summarize, compare, DEFAULT_BUDGET, RELATIVE_ALLOWANCE
 from .runner import run
 from .sampling import SensorSchedule
 from .workout import Workout, Segment
@@ -28,7 +28,7 @@ def probe():
             ((180,85),(240,85),(150,85),(210,80),(210,90),(180,85))]
 
 
-def long_workout(minutes):
+def long_workout(minutes, *, stress=False):
     if minutes not in (30, 60, 90):
         raise ValueError('Long rides must be 30, 60, or 90 minutes')
     # Repeated identical six-minute probes, separated by time-driven endurance
@@ -42,6 +42,17 @@ def long_workout(minutes):
             w,c = ((180,80),(210,85),(240,90))[(cursor//180)%3]
             segments.append(Segment(length,w,w,c)); cursor += length
         segments.extend(probe()); cursor += 360
+    if stress:
+        pause_start, pause_end = duration*.25+30, duration*.25+90
+        split=[]; start=0
+        for segment in segments:
+            end=start+segment.duration_s
+            points=sorted({start,end}|{t for t in (pause_start,pause_end) if start<t<end})
+            for left,right in zip(points,points[1:]):
+                split.append(Segment(right-left,segment.start_w,segment.end_w,
+                                     0 if pause_start<=left<pause_end else segment.cadence_rpm))
+            start=end
+        segments=split
     return Workout(segments), [{'name': n, 'start_s': s, 'duration_s':360}
                                 for n,s in zip(('early','middle','late'),starts)]
 
@@ -49,7 +60,7 @@ def long_workout(minutes):
 def coverage(table):
     cells = table['cells']
     required = []
-    for cadence in (80,85,90):
+    for cadence in (75,80,85,90,95):
         for watts in (150,180,210,240,270):
             r = (cadence-table['cadence_min'])//table['cadence_increment']
             c = watts//table['watt_increment']
@@ -118,7 +129,7 @@ def run_one(adapter,exe,config,profile,output,workout,seed,*,table=None,windows=
     outage=duration*.25
     power=SensorSchedule(1,.2,.1,dropouts=((outage,outage+12),) if stress else ())
     cadence=SensorSchedule(.25,.1)
-    pauses=((outage+30,False),(outage+60,True)) if stress else ()
+    pauses=((outage+30,False),(outage+90,True)) if stress else ()
     factory=observed_bridge(adapter,snapshots,initial_table=table,
         snapshot_times=sorted({w['start_s'] for w in windows}|{round(t) for t in np.arange(60,duration,60)}),pause_events=pauses)
     trace,meta=run(workout,config,exe,output,seed=seed,initial_position=profile.get('start_position',7433),
@@ -130,6 +141,7 @@ def run_one(adapter,exe,config,profile,output,workout,seed,*,table=None,windows=
     meta['initial_coverage']=coverage(snapshots[0]['table']); meta['final_coverage']=coverage(final)
     meta['controller_processes']=1; meta['state_resets_during_ride']=0
     meta['pause_events']=[{'time_s':t,'active':v} for t,v in pauses]
+    meta['pause_model']='60-second zero-cadence rider cue with bounded deceleration/reacceleration; real FTMS pause/start packets are status-only in current production' if stress else None
     meta['event_count_meaning']='Production log observations and insertion attempts, not guaranteed accepted insertions; gain logs are sampled, not exhaustive lookup counts.'
     score=summarize(trace,duration,workout); delivered=trace.copy(); delivered[:,2]=trace[:,14]
     score['delivered_sensor_metrics']=summarize(delivered,duration,workout)
@@ -159,13 +171,13 @@ def main(argv=None):
     if 'baseline' in prov and (prov['baseline']['commit']!=BASELINE_SHA or prov['baseline']['dirty']): raise ValueError('Baseline must be clean pinned develop')
     manifest={'status':'incomplete','experiment':'continuous-long-ride-v1','firmware':prov,'adapter':ainfo,
         'simulator_sha256':file_fingerprint(PACKAGE,[x for x in PACKAGE.rglob('*.py')]),'profile_sha256':hashlib.sha256(a.profile.read_bytes()).hexdigest(),
-        'bike':asdict(config),'runs':[],'limitations':['Virtual packet/controller execution, no radio or ESP32 scheduler','RAM table import does not test flash save/load','Fully learned means measured support at all 15 tested-range grid cells, not the entire 300-cell firmware table','Window comparisons are descriptive; learning is not assumed to improve response','Same learned fixture for both firmware versions; candidate-trained fixture provenance retained']}
+        'bike':asdict(config),'absolute_budgets':DEFAULT_BUDGET,'relative_allowances':RELATIVE_ALLOWANCE,'runs':[],'requested_cases':[{'minutes':m,'initial_state':s,'seed':seed} for m in a.minutes for s in a.states for seed in a.seeds] if a.command=='compare' else [],'limitations':['Virtual packet/controller execution, no radio or ESP32 scheduler','RAM table import does not test flash save/load','Fully learned means measured support at all 25 tested-range grid cells, not the entire 300-cell firmware table','Window comparisons are descriptive; learning is not assumed to improve response','Same learned fixture for both firmware versions; candidate-trained fixture provenance retained']}
     try:
         exes={k:adapter.build(a.output/k/'build',source_root=v,packet_ingress=True) for k,v in roots.items()}
         if a.command=='train':
-            workout=Workout([Segment(360,w,w,c) for c in (80,85,90) for w in (150,180,210,240,270)])
+            workout=Workout([Segment(216,w,w,c) for c in (75,80,85,90,95) for w in (150,180,210,240,270)])
             trace,meta,score,snaps=run_one(adapter,exes['candidate'],config,profile,a.output/'training',workout,137)
-            candidates=[s for s in snaps if 0<coverage(s['table'])['tested_range_supported']<15]
+            candidates=[s for s in snaps if 0<coverage(s['table'])['tested_range_supported']<coverage(s['table'])['tested_range_required']]
             if not candidates: raise RuntimeError('Training produced no partial table')
             partial=candidates[len(candidates)//3]
             fulls=[s for s in snaps if coverage(s['table'])['fully_supported_tested_range']]
@@ -196,7 +208,7 @@ def main(argv=None):
             manifest['stress_enabled']=a.stress
             manifest['seeds']=a.seeds
             for minutes in a.minutes:
-                workout,windows=long_workout(minutes)
+                workout,windows=long_workout(minutes,stress=a.stress)
                 for state,fixture in fixtures.items():
                     for seed in a.seeds:
                         scores={}; metadata={}
