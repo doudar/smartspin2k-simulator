@@ -12,7 +12,7 @@ class Element {
   createSVGPoint(){return {x:0,y:0,matrixTransform(){return {x:this.x,y:this.y};}};}getScreenCTM(){return {inverse(){return {};}};}
   async change(v){this.value=v;await this.events.change?.();}
 }
-const ids=['zoom-in','zoom-out','zoom-reset','zoom-earlier','zoom-later','zoom-select','zoom-range','firmware','test-type','duration','table','duration-filter','table-filter','history','scenario','seed','notice','overview','chart','chart-label','metrics','decisions','provenance','downloads','json','motor-note','learning','learning-label','learning-coverage','learning-metrics','learning-events','learning-evidence','learning-status','learning-hashes','learning-decisions','learning-grid'];
+const ids=['zoom-in','zoom-out','zoom-reset','zoom-earlier','zoom-later','zoom-select','zoom-range','firmware','test-type','duration','table','duration-filter','table-filter','history','scenario','seed','notice','overview','chart','chart-label','metrics','decisions','provenance','downloads','json','motor-note','cadence-note','chart-readout','learning','learning-label','learning-coverage','learning-metrics','learning-events','learning-evidence','learning-status','learning-hashes','learning-decisions','learning-grid'];
 
 const score={mae_w:1,p95_error_w:2};const row=(scenario,seed)=>({scenario,seed,absolute_passed:true,relative_passed:true,failures:[],scores:{baseline:score,candidate:score},reported_power_comparison:{absolute_passed:true,relative_passed:true,failures:[]}});
 const make=(id,rows,date)=>({id,metadata:{run_completed_at:date},comparison:{status:'complete',runs:rows},traces:{}});
@@ -46,10 +46,11 @@ const tick=()=>new Promise(setImmediate);
 function harness(hash=''){
  const nodes=Object.fromEntries(ids.map(id=>[id,new Element(['firmware','test-type','duration','table','history','scenario','seed'].includes(id)?'select':'div')]));
  const pending=new Map(),requests=[];
- const ctx={document:{events:{},addEventListener(event,handler){this.events[event]=handler;},getElementById:id=>nodes[id],createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)},location:{hash},Intl,Date,console,fetch:async url=>{
+ const ctx={ChartHover:{init(){},clear(){},update(data){this.data=data;}},document:{events:{},addEventListener(event,handler){this.events[event]=handler;},getElementById:id=>nodes[id],createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)},location:{hash},Intl,Date,console,fetch:async url=>{
   requests.push(url);
   if(url.startsWith('history.json'))return {ok:true,json:async()=>history.slice()};
   if(pending.has(url))return pending.get(url).promise;
+  if(url.startsWith('cadence-v1/'))return {ok:true,json:async()=>({traces:{'ramp-91':[[0,80,79],[1,0,80],[2,null,null],[3,90,88],[4,100,99]],'long_ride-27':[[0,80,79],[2700,0,0],[5400,90,89]]}})};
   if(url.startsWith('motor-v1/'))return {ok:true,json:async()=>({traces:{'ramp-91':[[0,10000],[1,11000],[2,null],[3,12000],[4,13000]],'long_ride-27':[[0,10000],[5400,11000]]}})};
   const id=url.split('/')[1];return {ok:!!runs[id],json:async()=>runs[id]};
  }};
@@ -70,6 +71,9 @@ const cleared=(all=true)=>{assert.equal(nodes.chart.children.length,0);assert.ok
  await nodes.firmware.change('branch:erg-spike-gate');assert.equal(nodes.history.value,'a');assert.equal(nodes.scenario.value,'ramp');assert.equal(nodes.seed.value,'91');assert.ok(nodes.metrics.children.length>0);
  const delayed=main.delay('runs/a-old/data.json');const stale=nodes.history.change('a-old');await tick();cleared();await nodes.firmware.change('branch:branch-b');delayed.reject(Error('old failed request'));await stale;assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');assert.equal(nodes.history.value,'b');
  assert.equal(nodes.chart.children.filter(n=>n['data-series']==='actual-motor').length,2);assert.ok(nodes.chart.children.some(n=>n.textContent==='100 W'));assert.ok(nodes.chart.children.some(n=>n.textContent==='Motor (steps)'));assert.match(nodes['motor-note'].textContent,/Missing position samples/);
+ assert.equal(nodes.chart.children.filter(n=>n['data-series']==='modeled-cadence').length,2);assert.equal(nodes.chart.children.filter(n=>n['data-series']==='received-cadence').length,2);
+ assert.ok(nodes.chart.children.filter(n=>n['data-series']==='modeled-cadence').some(n=>n.points.includes(',440.00'))); // zero cadence remains visible
+ assert.ok(nodes.chart.children.some(n=>n.textContent==='Cadence (RPM) · candidate'));
  runs.b.motor={traces:{}};vm.runInContext('current.motor={traces:{}};render()',ctx);assert.match(nodes['motor-note'].textContent,/unavailable/);assert.equal(nodes.chart.children.filter(n=>n['data-series']==='actual-motor').length,0);
  assert.equal(nodes.learning.hidden,true);assert.equal(nodes['learning-metrics'].children.length,0);
  await nodes.firmware.change('branch:erg-spike-gate');await nodes['test-type'].change('long');assert.equal(nodes['duration-filter'].hidden,false);assert.equal(nodes['table-filter'].hidden,false);assert.equal(nodes.scenario.value,'long_ride');assert.equal(nodes.seed.value,'91');cleared(false);
@@ -97,6 +101,7 @@ const cleared=(all=true)=>{assert.equal(nodes.chart.children.length,0);assert.ok
  // A stale successful data request and stale motor response cannot resurrect old results.
  const slow=main.delay('runs/long-empty/data.json');const pending=nodes.history.change('long-empty');await tick();cleared();await nodes.duration.change('60');await nodes.table.change('partial');slow.resolve({ok:true,json:async()=>runs['long-empty']});await pending;assert.equal(nodes.history.value,'long-partial');assert.match(nodes['learning-label'].textContent,/partially learned/);
  const slowMotor=main.delay('motor-v1/long-partial.json');const motorPending=nodes.history.change('long-partial');await tick();await nodes.firmware.change('branch:branch-b');slowMotor.resolve({ok:true,json:async()=>({traces:{}})});await motorPending;cleared();assert.match(nodes.notice.textContent,/UNAVAILABLE/);
+ await nodes.firmware.change('branch:erg-spike-gate');await nodes.duration.change('60');await nodes.table.change('partial');const slowCadence=main.delay('cadence-v1/long-partial.json');const cadencePending=nodes.history.change('long-partial');await tick();await nodes.firmware.change('branch:branch-b');slowCadence.resolve({ok:true,json:async()=>({traces:{}})});await cadencePending;cleared();assert.equal(nodes['cadence-note'].textContent,'');
  await nodes['test-type'].change('short');assert.equal(nodes.scenario.value,'ramp');assert.equal(nodes.seed.value,'27');cleared(false);await nodes.seed.change('91');assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');assert.equal(nodes.learning.hidden,true);
  // Deep links select firmware, type, duration, starting table, exact experiment and its first pair.
  const linked=harness('#long-full-old');await tick();assert.equal(linked.nodes.firmware.value,'branch:erg-spike-gate');assert.equal(linked.nodes['test-type'].value,'long');assert.equal(linked.nodes.duration.value,'90');assert.equal(linked.nodes.table.value,'full');assert.equal(linked.nodes.history.value,'long-full-old');assert.equal(linked.nodes.scenario.value,'long_ride');assert.equal(linked.nodes.seed.value,'27');assert.equal(linked.nodes.learning.hidden,false);
@@ -110,10 +115,12 @@ const cleared=(all=true)=>{assert.equal(nodes.chart.children.length,0);assert.ok
  const range=()=>JSON.parse(run('JSON.stringify(zoomWindow)'));
  assert.match(zn['zoom-range'].textContent,/Full ride: 0–5400 s/);assert.ok(zn['zoom-reset'].disabled);
  pointer('pointerdown',713);pointer('pointermove',227);pointer('pointerup',227);assert.deepEqual(range(),[1080,4320]); // reverse drag
- assert.ok(zn.chart.children.filter(n=>n.tagName==='polyline').every(n=>n['clip-path']==='url(#plot-clip)'));
+ assert.ok(zn.chart.children.filter(n=>n.tagName==='polyline').every(n=>['url(#plot-clip)','url(#cadence-clip)'].includes(n['clip-path'])));
  assert.ok(zn.chart.children.some(n=>n.textContent==='1080s'));assert.ok(zn.chart.children.some(n=>n.textContent==='4320s'));
+ const modeled=zn.chart.children.find(n=>n['data-series']==='modeled-cadence');assert.ok(modeled.points.includes('470.00,440.00')); // pause at 2700 s shares center x
  click('zoom-in');assert.deepEqual(range(),[1890,3510]);click('zoom-out');assert.deepEqual(range(),[1080,4320]);
  click('zoom-earlier');assert.deepEqual(range(),[0,3240]);assert.ok(zn['zoom-earlier'].disabled);click('zoom-later');assert.deepEqual(range(),[1620,4860]);click('zoom-reset');assert.equal(range(),null);
+ pointer('pointerdown',227,{clientY:380});pointer('pointermove',713,{clientY:380});pointer('pointerup',713,{clientY:380});assert.deepEqual(range(),[1080,4320]);click('zoom-reset');
  pointer('pointerdown',227);pointer('pointermove',230);pointer('pointerup',230);assert.equal(range(),null); // tiny gesture
  pointer('pointerdown',227);pointer('pointermove',713);pointer('pointercancel',713);assert.equal(range(),null);assert.equal(run('selection'),null);
  pointer('pointerdown',227);pointer('pointermove',713);pointer('lostpointercapture',713);assert.equal(range(),null);
@@ -127,12 +134,12 @@ const cleared=(all=true)=>{assert.equal(nodes.chart.children.length,0);assert.ok
  for(let i=0;i<20;i++)click('zoom-out');assert.equal(range(),null);
  run('zoomWindow=[4000,5000];render()');assert.deepEqual(range(),[4000,5000]);
  // Available shorter runs clamp the window; unavailable data clears it and cannot be resurrected by stale fetches.
- const short=JSON.parse(JSON.stringify(runs['long-full']));short.traces={'long_ride-27':{candidate:[[0,150,151,152],[1800,180,179,178]]}};short.motor={traces:{}};
+ const short=JSON.parse(JSON.stringify(runs['long-full']));short.traces={'long_ride-27':{candidate:[[0,150,151,152],[1800,180,179,178]]}};short.motor={traces:{}};short.cadence={traces:{}};
  z.ctx.shortRun=short;run('current=shortRun;render()');assert.deepEqual(range(),[800,1800]);
  const zslow=z.delay('runs/long-full-old/data.json');const zp=zn.history.change('long-full-old');await tick();assert.ok(zn['zoom-in'].disabled);pointer('pointerdown',227);assert.equal(run('selection'),null);
  await zn.firmware.change('branch:branch-b');zslow.resolve({ok:true,json:async()=>runs['long-full-old']});await zp;assert.equal(range(),null);assert.equal(zn.chart.children.length,0);assert.ok(zn['zoom-select'].disabled);
  await zn.firmware.change('branch:erg-spike-gate');assert.equal(range(),null);
- run('current.traces={};current.motor={traces:{}};render()');assert.ok(zn['zoom-in'].disabled);assert.equal(range(),null);
+ run('current.traces={};current.motor={traces:{}};current.cadence={traces:{}};render()');assert.ok(zn['zoom-in'].disabled);assert.equal(range(),null);
  const html=fs.readFileSync(require('node:path').join(__dirname,'../dashboard/index.html'),'utf8');assert.match(html,/not accepted insertions/);assert.match(html,/loaded into RAM; flash persistence is not tested/);assert.match(html,/do not establish that learning causes an improvement/);
  console.log('PASS: chart zoom region/buttons/touch/cancellation/bounds/async/unavailable,  firmware grouping, exact snapshots, deep links, absent combinations, preserved filters, motor axes/gaps, long-ride learning evidence, safe links, unavailable recovery, and stale-fetch isolation');
 })().catch(e=>{console.error(e);process.exitCode=1;});

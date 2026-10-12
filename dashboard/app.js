@@ -5,6 +5,7 @@ const number=v=>typeof v==='number'&&Number.isFinite(v)?v.toFixed(2):'n/a';
 const safeId=s=>typeof s==='string'&&/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,100}$/.test(s);
 const decision=(v,relative=false)=>v===true?'PASS':v===false?(relative?'REGRESSION':'OUTSIDE BAND'):'UNAVAILABLE';
 let current, history, serial=0, desiredScenario=null, desiredSeed=null, desiredDuration=null, desiredTable=null, shortScenario=null;
+ChartHover.init({svg:$('chart'),readout:$('chart-readout')});
 function runDate(md){const value=md.run_completed_at||md.imported_at;if(!value||!Number.isFinite(Date.parse(value)))return 'time not recorded';return new Intl.DateTimeFormat('en-US',{timeZone:'Etc/GMT+5',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(value))+' UTC−05:00';}
 const initialState=s=>({empty:'empty starting table',partial:'partially learned TESTED RANGE',full:'fully learned TESTED RANGE'})[s]||'starting state not recorded';
 function rideLabel(minutes,state){return `${[30,60,90].includes(minutes)?minutes+' min':'duration not recorded'} · ${initialState(state)}`;}
@@ -78,7 +79,7 @@ function updateZoomControls(){
 function cancelSelection(){
  if(selection){const id=selection.id;selection.rect.remove();selection=null;if($('chart').hasPointerCapture?.(id))$('chart').releasePointerCapture(id);}
 }
-function clearChartZoom(reset=false){cancelSelection();chartRow=null;chartEnd=0;selectMode=false;if(reset)zoomWindow=null;updateZoomControls();}
+function clearChartZoom(reset=false){ChartHover.clear();cancelSelection();chartRow=null;chartEnd=0;selectMode=false;if(reset)zoomWindow=null;updateZoomControls();}
 function changeZoom(factor,shift=0){
  if(!chartRow||!chartEnd)return;const [a,b]=zoomWindow||[0,chartEnd],span=(b-a)*factor,center=(a+b)/2+(b-a)*shift;
  zoomWindow=clampWindow([center-span/2,center+span/2],chartEnd);draw(chartRow);
@@ -95,9 +96,9 @@ function selectionEnd(event,cancel=false){
 }
 $('chart').addEventListener('pointerdown',event=>{
  if(!chartRow||!chartEnd||event.isPrimary===false||event.button!==0||event.pointerType==='touch'&&!selectMode)return;
- if(selection)return;const point=plotPoint(event);if(point.x<65||point.x>875||point.y<40||point.y>280)return;
+ if(selection)return;const point=plotPoint(event);if(point.x<65||point.x>875||point.y<40||point.y>440)return;
  event.preventDefault();const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
- for(const[k,v]of Object.entries({x:point.x,y:40,width:0,height:240,fill:'#58dec833',stroke:'#58dec8','pointer-events':'none'}))rect.setAttribute(k,v);
+ for(const[k,v]of Object.entries({x:point.x,y:40,width:0,height:400,fill:'#58dec833',stroke:'#58dec8','pointer-events':'none'}))rect.setAttribute(k,v);
  $('chart').append(rect);selection={id:event.pointerId,start:point.x,last:point.x,range:zoomWindow||[0,chartEnd],rect};$('chart').setPointerCapture(event.pointerId);
 });
 $('chart').addEventListener('pointermove',event=>{
@@ -120,10 +121,13 @@ cancelSelection();const svg=$('chart');svg.replaceChildren();chartRow=row;const 
 const add=(tag,attrs,text)=>{const n=document.createElementNS(ns,tag);for(const[k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;svg.append(n);};
 const key=`${row.scenario}-${row.seed}`,artifactKey=safeId(row.artifact_key)?row.artifact_key:key,traces=current.traces?.[key]||current.traces?.[artifactKey]||{};
 const c=traces.candidate||[],b=traces.baseline||[],motor=current.motor?.traces?.[key]||current.motor?.traces?.[artifactKey]||[];
+const cadence=current.cadence?.traces?.[key]||current.cadence?.traces?.[artifactKey]||[];
+const validCadence=cadence.filter(r=>r.slice(1,3).some(v=>typeof v==='number'&&Number.isFinite(v)));
+$('cadence-note').textContent=validCadence.length?'Violet: candidate modeled rider cadence (cadence_rpm), recorded in RPM. Missing samples are gaps. '+(cadence.some(r=>typeof r[2]==='number'&&Number.isFinite(r[2]))?'Dashed lavender: recorded firmware-received cadence.':'Firmware-received cadence is not available as a complete recorded time series and is not inferred.'):'Cadence unavailable for this run / scenario / seed; no RPM values are inferred.';
 const validMotor=motor.filter(r=>typeof r[1]==='number'&&Number.isFinite(r[1]));
 $('motor-note').textContent=validMotor.length?'Red: candidate simulated actual motor position (motor_steps), right axis in steps. This is the virtual motor counter; commanded target and physical bike position are separate signals.'+(validMotor.length<motor.length?' Missing position samples are shown as gaps.':''):'Actual motor position unavailable for this run / scenario / seed; no position values are inferred.';
-if(!c.length&&!b.length){add('text',{x:65,y:140},'No power trace available for this run.');if(!validMotor.length){clearChartZoom(true);return;}}
-const all=[...c,...b],end=Math.max(...all.map(r=>r[0]),...motor.map(r=>r[0]),1);
+if(!c.length&&!b.length){add('text',{x:65,y:140},'No power trace available for this run.');if(!validMotor.length&&!validCadence.length){clearChartZoom(true);return;}}
+const all=[...c,...b],end=Math.max(...all.map(r=>r[0]),...motor.map(r=>r[0]),...cadence.map(r=>r[0]),1);
 // Watts and steps have independent scales. Motor values must never inflate watts.
 const top=Math.ceil(Math.max(...all.flatMap(r=>r.slice(1,4)),100)/100)*100;
 chartEnd=end;zoomWindow=zoomWindow?clampWindow(zoomWindow,end):null;updateZoomControls();
@@ -140,7 +144,27 @@ for(let i=0;i<=4;i++){const p=bottom+(topStep-bottom)*i/4;add('text',{x:right+10
 let segment=[];const flush=()=>{if(segment.length===1)add('circle',{'clip-path':'url(#plot-clip)',cx:x(segment[0][0]),cy:ym(segment[0][1]),r:2,fill:'#ff646b','data-series':'actual-motor'});else if(segment.length)add('polyline',{'clip-path':'url(#plot-clip)',points:windowRows(segment,from,to).map(r=>`${x(r[0]).toFixed(2)},${ym(r[1]).toFixed(2)}`).join(' '),fill:'none',stroke:'#ff646b','stroke-width':1.8,'data-series':'actual-motor'});segment=[];};
 for(const r of motor){if(typeof r[1]==='number'&&Number.isFinite(r[1]))segment.push(r);else flush();}flush();
 }
-add('rect',{x:65,y:40,width:810,height:240,fill:'transparent','data-plot-hit':'true'});
+// A separate RPM panel shares x coordinates and the exact same selected window.
+const cadenceTop=Math.max(120,Math.ceil(Math.max(0,...validCadence.flatMap(r=>r.slice(1,3).filter(Number.isFinite)))/20)*20),yc=rpm=>440-rpm/cadenceTop*90;
+const cadenceClip=document.createElementNS(ns,'clipPath'),cadenceRect=document.createElementNS(ns,'rect');cadenceClip.setAttribute('id','cadence-clip');for(const[k,v]of Object.entries({x:left,y:350,width:right-left,height:90}))cadenceRect.setAttribute(k,v);cadenceClip.append(cadenceRect);defs.append(cadenceClip);
+add('text',{x:left,y:334,class:'cadence-axis'},'Cadence (RPM) · candidate');
+for(let i=0;i<=2;i++){const rpm=cadenceTop*i/2;add('line',{x1:left,x2:right,y1:yc(rpm),y2:yc(rpm),stroke:'#304255'});add('text',{x:15,y:yc(rpm)+4,class:'cadence-axis'},String(rpm));}
+for(let i=0;i<=4;i++){const t=from+(to-from)*i/4;add('text',{x:x(t)-10,y:466},`${formatTime(t)}s`);}
+if(!validCadence.length)add('text',{x:left+12,y:400},'Cadence not recorded');
+for(const [col,color,name,dash]of [[1,'#ba91ff','modeled-cadence',''],[2,'#ead5ff','received-cadence','6 4']]){
+ let segment=[];const flush=()=>{if(segment.length===1)add('circle',{'clip-path':'url(#cadence-clip)',cx:x(segment[0][0]),cy:yc(segment[0][col]),r:2,fill:color,'data-series':name});else if(segment.length)add('polyline',{'clip-path':'url(#cadence-clip)',points:windowRows(segment,from,to).map(r=>`${x(r[0]).toFixed(2)},${yc(r[col]).toFixed(2)}`).join(' '),fill:'none',stroke:color,'stroke-width':2,'stroke-dasharray':dash,'data-series':name});segment=[];};
+ for(const r of cadence){if(typeof r[col]==='number'&&Number.isFinite(r[col]))segment.push(r);else flush();}flush();
+}
+add('rect',{x:65,y:40,width:810,height:400,fill:'transparent','data-plot-hit':'true'});
+ChartHover.update({from,to,end,series:[
+ {label:'Target power',units:'W',rows:c.length?c:b,valueIndex:1,color:'#b2c1cc'},
+ {label:'Candidate plant power',units:'W',rows:c,valueIndex:2,color:'#58dec8'},
+ {label:'Baseline plant power',units:'W',rows:b,valueIndex:2,color:'#639de8'},
+ {label:'Candidate delivered power',units:'W',rows:c,valueIndex:3,color:'#f5c16c'},
+ {label:'Candidate actual motor',units:'steps',rows:motor,valueIndex:1,color:'#ff646b'},
+ {label:'Candidate modeled rider cadence',units:'RPM',rows:cadence,valueIndex:1,color:'#ba91ff'},
+ {label:'Candidate firmware-received cadence',units:'RPM',rows:cadence,valueIndex:2,color:'#ead5ff'}
+]});
 }
 
 function testedCoverage(c){return Number.isInteger(c?.tested_range_required)&&c.tested_range_required>0&&Number.isInteger(c.tested_range_supported)&&c.tested_range_supported>=0&&c.tested_range_supported<=c.tested_range_required?`${c.tested_range_supported} / ${c.tested_range_required} tested cells`:'Tested-range coverage unavailable';}
@@ -188,10 +212,10 @@ function render(){const m=current.comparison;const longRide=m.experiment==='cont
 $('notice').textContent=m.status==='complete'?`${m.budget_status||'Provisional engineering budgets'}. ${rows.length-abs} pairs outside one or more absolute bands. This is a model result, not a hardware pass.`:`${m.status.toUpperCase()}: ${m.error||current.metadata.reason||'No complete result available.'}`;
 $('notice').textContent+=` Tested candidate: ${(m.firmware?.candidate?.commit||history.find(r=>r.id===current.id)?.candidate_commit||'revision not recorded').slice(0,12)}. Branch snapshots can differ between tests.`;
 $('metrics').replaceChildren();$('decisions').replaceChildren();renderLearning(row);if(row){$('chart-label').textContent=`${row.scenario} / seed ${row.seed}`;draw(row);const head=el('tr');for(const t of ['Signal / metric','Baseline','Candidate','Delta','Relative allowance'])head.append(el('th',t));$('metrics').append(head);for(const [signal,sub] of [['Plant',null],['Delivered sensor','delivered_sensor_metrics']]){const base=sub?row.scores?.baseline?.[sub]:row.scores?.baseline,cand=sub?row.scores?.candidate?.[sub]:row.scores?.candidate,changes=sub?row.reported_power_comparison?.changes:row.changes;for(const metric of ['mae_w','p95_error_w','overshoot_w','undershoot_w','outside_band_percent','steady_rmse_w','steady_variation_w_per_s','unsettled_steps','worst_settling_s']){const tr=el('tr');for(const t of [`${signal} · ${metric.replaceAll('_',' ')}`,number(base?.[metric]),number(cand?.[metric]),number(changes?.[metric]?.delta),number(changes?.[metric]?.allowance)])tr.append(el('td',t));$('metrics').append(tr);}}
-for(const [label,score] of [['Plant',row],['Delivered sensor',row.reported_power_comparison]]){const p=el('p',`${longRide?'Whole ride · ':''}${label}: absolute ${decision(score?.absolute_passed)} · relative ${decision(score?.relative_passed,true)}`);$('decisions').append(p);const ul=el('ul');for(const f of (score?.failures||[]).filter(f=>label!=='Plant'||!f.startsWith('delivered sensor: ')))ul.append(el('li',f,'bad'));$('decisions').append(ul);}}else{clearChartZoom(true);$('chart').replaceChildren();$('motor-note').textContent='';$('chart-label').textContent='Selected scenario / seed unavailable';const explanation=`${desiredScenario||'No scenario'} / seed ${desiredSeed||'not selected'} is unavailable in this run. Your selection is kept; switch back or choose an available combination.`;$('notice').textContent+=' '+explanation;$('decisions').append(el('p',explanation));}
+for(const [label,score] of [['Plant',row],['Delivered sensor',row.reported_power_comparison]]){const p=el('p',`${longRide?'Whole ride · ':''}${label}: absolute ${decision(score?.absolute_passed)} · relative ${decision(score?.relative_passed,true)}`);$('decisions').append(p);const ul=el('ul');for(const f of (score?.failures||[]).filter(f=>label!=='Plant'||!f.startsWith('delivered sensor: ')))ul.append(el('li',f,'bad'));$('decisions').append(ul);}}else{clearChartZoom(true);$('chart').replaceChildren();$('motor-note').textContent='';$('cadence-note').textContent='';$('chart-label').textContent='Selected scenario / seed unavailable';const explanation=`${desiredScenario||'No scenario'} / seed ${desiredSeed||'not selected'} is unavailable in this run. Your selection is kept; switch back or choose an available combination.`;$('notice').textContent+=' '+explanation;$('decisions').append(el('p',explanation));}
 $('provenance').replaceChildren();const md=current.metadata;line('Tested firmware ref',history.find(r=>r.id===current.id)?.display_ref||md.candidate_ref||md.release_tag||'Not recorded');line('Run ID',current.id);line('Experiment completed (UTC)',md.run_completed_at||'Not recorded');line('Evidence imported (UTC)',md.imported_at);line('Candidate release',md.release_tag||'Development commit');line('Release published (UTC)',md.release_published_at||'Not a release / not recorded');line('Baseline release',md.baseline_release_tag);line('Baseline release published',md.baseline_release_published_at);line('Candidate commit',m.firmware?.candidate?.commit);line('Baseline commit',m.firmware?.baseline?.commit);line('Adapter commit',md.adapter_commit);line('Adapter SHA-256',m.adapter?.sha256);line('Adapter patch SHA-256',md.adapter_patch_sha256||'No compatibility patch');line('Simulator commit',md.simulator_commit);line('Simulator source SHA-256',m.simulator_sha256);line('Profile SHA-256',m.profile_sha256);line('Package config SHA-256',m.package_config_sha256);line('Candidate source SHA-256',m.firmware?.candidate?.source_sha256);line('Baseline source SHA-256',m.firmware?.baseline?.source_sha256);line('Source dirty flags',JSON.stringify(Object.fromEntries(Object.entries(m.firmware||{}).map(([k,v])=>[k,v.dirty]))));line('Coverage',m.coverage_level);line('Runtime toolchain',JSON.stringify(md.runtime_toolchain||'Not recorded; adapter-provenance toolchain, if present, describes original local validation only'));line('Provenance notes',md.notes);
 $('downloads').replaceChildren(link('Full raw evidence ZIP',`runs/${current.id}/evidence.zip`),link('Comparison JSON',`runs/${current.id}/comparison.json`),link('File checksums',`runs/${current.id}/SHA256SUMS.txt`));if(/^https:\/\/github\.com\/doudar\/smartspin2k-simulator\/actions\/runs\/\d+$/.test(md.workflow_url||''))$('downloads').append(link('GitHub Actions run',md.workflow_url));$('json').textContent=JSON.stringify(m,null,2);}
-async function load(){const id=$('history').value;if(!safeId(id))throw Error('Invalid run identifier');const token=++serial;try{clearRun();$('notice').textContent='Loading selected experiment…';const result=await fetch(`runs/${id}/data.json`);if(!result.ok)throw Error('Run data unavailable');const data=await result.json();try{const motor=await fetch(`motor-v1/${id}.json`);if(motor.ok)data.motor=await motor.json();}catch(e){data.motor=null;}if(token!==serial)return;current=data;$('scenario').disabled=false;$('seed').disabled=false;render();location.hash=encodeURIComponent(id);}catch(e){if(token===serial)fail(e);}}
+async function load(){const id=$('history').value;if(!safeId(id))throw Error('Invalid run identifier');const token=++serial;try{clearRun();$('notice').textContent='Loading selected experiment…';const result=await fetch(`runs/${id}/data.json`);if(!result.ok)throw Error('Run data unavailable');const data=await result.json();try{const motor=await fetch(`motor-v1/${id}.json`);if(motor.ok)data.motor=await motor.json();}catch(e){data.motor=null;}try{const cadence=await fetch(`cadence-v1/${id}.json`);data.cadence=cadence.ok?await cadence.json():null;}catch(e){data.cadence=null;}if(token!==serial)return;current=data;$('scenario').disabled=false;$('seed').disabled=false;render();location.hash=encodeURIComponent(id);}catch(e){if(token===serial)fail(e);}}
 $('history').addEventListener('change',()=>choose($('history').value).catch(fail));
 $('firmware').addEventListener('change',()=>choose().catch(fail));
 $('test-type').addEventListener('change',()=>{if($('test-type').value==='long'){shortScenario=desiredScenario;desiredScenario='long_ride';}else desiredScenario=shortScenario;return choose().catch(fail);});
@@ -199,7 +223,7 @@ $('duration').addEventListener('change',()=>{desiredDuration=$('duration').value
 $('table').addEventListener('change',()=>{desiredTable=$('table').value;return choose().catch(fail);});
 $('scenario').addEventListener('change',()=>{desiredScenario=$('scenario').value;return choose($('history').value).catch(fail);});
 $('seed').addEventListener('change',()=>{desiredSeed=$('seed').value;return choose($('history').value).catch(fail);});
-function clearRun(){clearChartZoom();for(const id of ['overview','chart','metrics','decisions','provenance','downloads','json','chart-label','motor-note'])$(id).replaceChildren();clearLearning();$('scenario').disabled=true;$('seed').disabled=true;}
+function clearRun(){clearChartZoom();for(const id of ['overview','chart','metrics','decisions','provenance','downloads','json','chart-label','motor-note','cadence-note'])$(id).replaceChildren();clearLearning();$('scenario').disabled=true;$('seed').disabled=true;}
 function fail(e){clearRun();clearChartZoom(true);$('notice').textContent=`Unable to load results: ${e.message}. No previous run is being displayed.`;}
 (async()=>{const r=await fetch(`history.json?v=${Date.now()}`,{cache:'no-store'});if(!r.ok)throw Error('History unavailable');history=await r.json();history.sort((a,b)=>(b.metadata.run_completed_at||b.metadata.imported_at||'').localeCompare(a.metadata.run_completed_at||a.metadata.imported_at||''));
  const initial=history.find(r=>r.id===decodeURIComponent(location.hash.slice(1)))||history[0];if(!initial){$('notice').textContent='No experiments published yet.';return;}

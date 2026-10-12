@@ -169,3 +169,23 @@ Historical release baselines inside paired results are not relabeled as standalo
 candidate experiments. This navigation update reruns no physics and changes no
 immutable run files, original scores, evidence ZIPs or checksums. The renderer
 adds only a scenario/seed selection catalog to the regenerated history index.
+
+### Cadence and shared inspection
+
+The versioned `cadence-v1/` presentation sidecar is rebuilt from each retained
+candidate `trace.csv` without rewriting `runs/`, checksums, scores, or evidence
+ZIPs. Its RPM signal is `cadence_rpm`: the simulated rider cadence passed to the
+bike plant, not a physical measurement or a complete firmware-received cadence
+trace. CSC packets and sparse control logs are not used to invent missing runtime
+RPM values. The reserved received-cadence column is null when unavailable.
+
+A separate cadence panel shares the power/motor chart's elapsed-time window;
+dragging either panel and all zoom controls affect both. RPM scaling is independent
+of watts and motor steps. Zero-cadence pauses and missing-data gaps are retained.
+
+Hover either panel to inspect power, motor and cadence at one cursor time. On touch
+screens, a tap pins the same readout; Select area still opts into drag zoom. Values
+show their own nearest retained sample timestamps rather than interpolated values
+or claimed raw-resolution samples. Missing values remain unavailable. Tap outside
+or press Escape to dismiss. With the chart focused, Left/Right and Home/End inspect
+retained sample times. Changing the run, scenario, or window clears the readout.

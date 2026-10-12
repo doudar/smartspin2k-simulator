@@ -108,6 +108,7 @@ def chart(raw,*,preserve_extrema=False):
 
 # Versioned, reproducible display data lives outside immutable evidence runs.
 MOTOR_RENDERER = 'motor-v1'
+CADENCE_RENDERER = 'cadence-v1'
 
 def motor_chart(raw,*,preserve_extrema=False):
     rows=[]
@@ -142,6 +143,49 @@ def motor_display(run,data):
             if not matches: continue
             if len(matches)!=1 or matches[0].file_size>MAX_FILE: raise ValueError('Invalid motor evidence')
             result['traces'][key]=motor_chart(z.read(matches[0]),preserve_extrema=data['comparison'].get('experiment')=='continuous-long-ride-v1')
+    return result
+
+def cadence_chart(raw):
+    """Candidate modeled rider RPM, never workout cues or reconstructed firmware RPM.
+
+    trace.csv's cadence_rpm is the rider/bike input recorded by runner.run().
+    cadence.csv's reported_rpm is also model-side, despite its name. Neither is
+    the firmware's decoded runtime cadence. Reserve a nullable third column for
+    that signal, but do not infer it from CSC packets or intermittent ERG logs.
+    """
+    rows=[]
+    reader=csv.DictReader(io.StringIO(raw.decode('utf8')))
+    if not reader.fieldnames or 'cadence_rpm' not in reader.fieldnames:
+        return []
+    if reader.fieldnames.count('cadence_rpm')!=1 or reader.fieldnames.count('time_s')!=1:
+        raise ValueError('Invalid cadence columns')
+    for n,row in enumerate(reader):
+        if n>1000000: raise ValueError('Trace too long')
+        try: t=float(row['time_s'])
+        except (ValueError,TypeError): raise ValueError('Invalid trace time') from None
+        if not math.isfinite(t) or not 0<=t<1e9: raise ValueError('Invalid trace time')
+        if rows and t<=rows[-1][0]: raise ValueError('Nonmonotonic trace time')
+        try: cadence=float(row.get('cadence_rpm',''))
+        except (ValueError,TypeError): cadence=None
+        if cadence is not None and (not math.isfinite(cadence) or not 0<=cadence<1e9): cadence=None
+        rows.append([t,cadence,None])
+    # Only the recorded column participates: including the always-null reserved
+    # column would hide internal rider gaps behind an "all rows missing" test.
+    return decimate_extrema(rows,columns=(1,),transition_column=None)
+
+def cadence_display(run,data):
+    result={'source_field':'cadence_rpm','received_source_field':None,
+            'units':'rpm','renderer':CADENCE_RENDERER,'traces':{}}
+    with zipfile.ZipFile(run/'evidence.zip') as z:
+        if len(z.infolist())>10000: raise ValueError('Too many evidence entries')
+        for row in data['comparison'].get('runs',[]):
+            key=f"{row['scenario']}-{row['seed']}"
+            artifact_key=row.get('artifact_key',key)
+            name=f'candidate/{artifact_key}/trace.csv'
+            matches=[entry for entry in z.infolist() if entry.filename==name]
+            if not matches: continue
+            if len(matches)!=1 or matches[0].file_size>MAX_FILE: raise ValueError('Invalid cadence evidence')
+            result['traces'][key]=cadence_chart(z.read(matches[0]))
     return result
 
 def validate_metadata(metadata):
@@ -193,13 +237,19 @@ def build(history,output):
         except (ValueError,KeyError,UnicodeError,zipfile.BadZipFile,csv.Error):
             motor={'source_field':'motor_steps','units':'steps','renderer':MOTOR_RENDERER,'traces':{},'status':'unavailable'}
         (display/(run.name+'.json')).write_text(json.dumps(motor,allow_nan=False,separators=(',',':')))
+        cadence_dir=output/CADENCE_RENDERER; cadence_dir.mkdir(exist_ok=True)
+        try: cadence=cadence_display(run,data)
+        except (ValueError,KeyError,UnicodeError,zipfile.BadZipFile,csv.Error):
+            cadence={'source_field':'cadence_rpm','received_source_field':None,
+                     'units':'rpm','renderer':CADENCE_RENDERER,'traces':{},'status':'unavailable'}
+        (cadence_dir/(run.name+'.json')).write_text(json.dumps(cadence,allow_nan=False,separators=(',',':')))
         candidate=data['comparison'].get('firmware',{}).get('candidate',{}).get('commit')
         display_ref=data['metadata'].get('release_tag') or data['metadata'].get('candidate_ref') or KNOWN_TESTED_REFS.get(candidate) or ('commit '+candidate[:12] if isinstance(candidate,str) else 'Unrecorded ref')
         if data['metadata'].get('evidence_only') is True: continue
         entries.append({'id':run.name,'metadata':data['metadata'],'display_ref':display_ref,'candidate_commit':candidate,'status':data['comparison']['status'],'pairs':len(data['comparison'].get('runs',[])),'selections':[{'scenario':row['scenario'],'seed':row['seed']} for row in data['comparison'].get('runs',[])]})
-    for name in ('index.html','app.js','style.css'): shutil.copyfile(Path(__file__).parent/name,output/name)
+    for name in ('index.html','app.js','hover.js','style.css'): shutil.copyfile(Path(__file__).parent/name,output/name)
     template=(output/'index.html').read_text()
-    for asset in ('app.js','style.css'):
+    for asset in ('app.js','hover.js','style.css'):
         version=hashlib.sha256((output/asset).read_bytes()).hexdigest()[:16]
         template=template.replace('"'+asset+'"','"'+asset+'?v='+version+'"')
     (output/'index.html').write_text(template)
