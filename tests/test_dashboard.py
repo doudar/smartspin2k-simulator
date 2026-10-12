@@ -61,6 +61,29 @@ class DashboardTests(unittest.TestCase):
     def test_chart_decimation_preserves_endpoints(self):
         data='time_s,target_w,power_w,latest_delivered_sensor_power_w\n'+''.join(f'{i},100,99,98\n'for i in range(4000))
         chart=m.chart(data.encode());self.assertLessEqual(len(chart),1801);self.assertEqual(chart[0][0],0);self.assertEqual(chart[-1][0],3999)
+    def test_motor_uses_actual_not_command_or_physical(self):
+        raw=b'time_s,motor_steps,command_steps,physical_steps\n0,120,900,60\n1,140,800,70\n'
+        self.assertEqual(m.motor_chart(raw),[[0,120],[1,140]])
+    def test_motor_missing_and_invalid_values_remain_unavailable(self):
+        self.assertEqual(m.motor_chart(b'time_s,command_steps\n0,99\n'),[])
+        result=m.motor_chart(b'time_s,motor_steps\n0,0\n1,\n2,nan\n3,inf\n4,-12\n')
+        self.assertEqual(result,[[0,0],[1,None],[2,None],[3,None],[4,-12]])
+    def test_motor_gap_survives_decimation(self):
+        raw='time_s,motor_steps\n'+''.join(f'{i},{"" if i==1 else 100}\n' for i in range(4000))
+        result=m.motor_chart(raw.encode())
+        self.assertLessEqual(len(result),1801);self.assertEqual(result[0],[0,100]);self.assertEqual(result[-1],[3999,100]);self.assertIsNone(result[1][1])
+    def test_backfill_preserves_every_immutable_file(self):
+        trace=self.source/'candidate/steps-7/trace.csv';trace.parent.mkdir(parents=True)
+        trace.write_text('time_s,target_w,power_w,latest_delivered_sensor_power_w,motor_steps,command_steps,physical_steps\n0,100,99,98,120,900,60\n1,100,99,98,140,800,70\n')
+        m.materialize(self.source,self.dest,'run-1',{})
+        originals={p.name:p.read_bytes() for p in self.dest.iterdir()}
+        m.build(self.history,self.root/'site')
+        motor=json.loads((self.root/'site/motor-v1/run-1.json').read_text())
+        self.assertEqual(motor['traces']['steps-7'],[[0,120],[1,140]])
+        self.assertEqual(motor['source_field'],'motor_steps')
+        for name,raw in originals.items():
+            self.assertEqual((self.dest/name).read_bytes(),raw)
+            self.assertEqual((self.root/'site/runs/run-1'/name).read_bytes(),raw)
     def test_invalid_metadata_becomes_incomplete(self):
         (self.source/'run-metadata.json').write_text('{broken')
         script=Path(__file__).resolve().parents[1]/'dashboard/ingest.py'

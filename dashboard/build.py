@@ -81,6 +81,42 @@ def chart(raw):
     step=max(1,math.ceil(len(rows)/1800))
     return rows[::step]+([rows[-1]] if rows and (len(rows)-1)%step else [])
 
+# Versioned, reproducible display data lives outside immutable evidence runs.
+MOTOR_RENDERER = 'motor-v1'
+
+def motor_chart(raw):
+    rows=[]
+    reader=csv.DictReader(io.StringIO(raw.decode('utf8')))
+    if not reader.fieldnames or 'motor_steps' not in reader.fieldnames:
+        return []
+    for n,row in enumerate(reader):
+        if n>1000000: raise ValueError('Trace too long')
+        t=float(row['time_s'])
+        if not math.isfinite(t) or abs(t)>=1e9: raise ValueError('Invalid trace time')
+        try: position=float(row.get('motor_steps',''))
+        except (ValueError,TypeError): position=None
+        if position is not None and (not math.isfinite(position) or abs(position)>=1e9): position=None
+        rows.append([t,position])
+    step=max(1,math.ceil(len(rows)/1800))
+    # Preserve missing-data gaps even when their rows fall between display samples.
+    result=[[rows[i][0], rows[i][1] if all(r[1] is not None for r in rows[max(0,i-step+1):i+1]) else None] for i in range(0,len(rows),step)]
+    if rows and (len(rows)-1)%step:
+        result.append([rows[-1][0],rows[-1][1] if all(r[1] is not None for r in rows[len(result)*step-step+1:]) else None])
+    return result
+
+def motor_display(run,data):
+    result={'source_field':'motor_steps','units':'steps','renderer':MOTOR_RENDERER,'traces':{}}
+    with zipfile.ZipFile(run/'evidence.zip') as z:
+        if len(z.infolist())>10000: raise ValueError('Too many evidence entries')
+        for row in data['comparison'].get('runs',[]):
+            key=f"{row['scenario']}-{row['seed']}"
+            name=f'candidate/{key}/trace.csv'
+            matches=[entry for entry in z.infolist() if entry.filename==name]
+            if not matches: continue
+            if len(matches)!=1 or matches[0].file_size>MAX_FILE: raise ValueError('Invalid motor evidence')
+            result['traces'][key]=motor_chart(z.read(matches[0]))
+    return result
+
 def validate_metadata(metadata):
     valid_tree(metadata)
     if not isinstance(metadata,dict): raise ValueError('Metadata must be an object')
@@ -124,6 +160,11 @@ def build(history,output):
         for name in ('data.json','comparison.json','SHA256SUMS.txt','evidence.zip'):
             if (run/name).is_symlink(): raise ValueError('Symlink')
             shutil.copyfile(run/name,target/name)
+        display=output/MOTOR_RENDERER; display.mkdir(exist_ok=True)
+        try: motor=motor_display(run,data)
+        except (ValueError,KeyError,UnicodeError,zipfile.BadZipFile,csv.Error):
+            motor={'source_field':'motor_steps','units':'steps','renderer':MOTOR_RENDERER,'traces':{},'status':'unavailable'}
+        (display/(run.name+'.json')).write_text(json.dumps(motor,allow_nan=False,separators=(',',':')))
         candidate=data['comparison'].get('firmware',{}).get('candidate',{}).get('commit')
         display_ref=data['metadata'].get('release_tag') or data['metadata'].get('candidate_ref') or KNOWN_TESTED_REFS.get(candidate) or ('commit '+candidate[:12] if isinstance(candidate,str) else 'Unrecorded ref')
         entries.append({'id':run.name,'metadata':data['metadata'],'display_ref':display_ref,'candidate_commit':candidate,'status':data['comparison']['status'],'pairs':len(data['comparison'].get('runs',[]))})

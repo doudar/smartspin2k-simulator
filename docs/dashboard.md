@@ -9,6 +9,11 @@ GitHub Actions** and a deployment succeeds. No personal access token is needed.
 
 - Immutable run history, then scenario and seed selection.
 - Target, actual modeled plant, baseline plant and delivered-sensor power traces.
+- Candidate simulated actual motor position in red, with a separate right-hand steps axis.
+  Its source is `motor_steps`, the native virtual motor’s current completed-step counter
+  (after motor advancement), not `command_steps` (target) or `physical_steps` (bike
+  knob position after backlash/travel stops). This is simulated telemetry, not a
+  measured encoder signal; its coordinate can differ from physical bike position.
 - Original full-clock scores with absolute quality bands separate from relative
   regression allowances. Both plant and sensor decisions are displayed.
 - Exact firmware, adapter, simulator and model fingerprints; release publication
@@ -98,3 +103,11 @@ All three now run under the same reviewed [test-only compatibility patch](../das
 The patch supplies historical host API plumbing, preserves the historical empty-table constructors in fresh per-ride processes, and uses C++20 for an existing historical `starts_with` call. It does not add newer controller/learning behavior. An automated audit checks production bodies byte-for-byte, allowing only documented peripheral include and virtual-clock seams. The adapter provenance, initial-state audit and local source audit are in `dashboard/compatibility/`. Each cloud experiment includes its own newly executed source audit. Earlier unsupported-API preflight results are superseded, not firmware failures.
 
 Verified local full-matrix absolute passes:26.8.23 7/18,26.9.15 7/18,26.10.1 6/18,current782c2b5 9/18. These are provisional whole-matrix counts, not a declaration that the newest release wins every scenario. See live raw metrics and separate relative decisions for detail.
+
+### Motor display backfill
+
+The trusted renderer rebuilds versioned `motor-v1/<run-id>.json` display data from
+archived candidate CSVs. Existing `runs/` summaries, raw ZIPs, comparison JSON and
+checksums stay byte-for-byte unchanged. No experiment is rerun and no score changes.
+Missing motor columns are unavailable; missing/nonfinite samples create gaps, never
+inferred positions. The display decimation preserves gap markers and endpoints.
