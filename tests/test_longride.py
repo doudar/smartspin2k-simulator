@@ -9,7 +9,7 @@ class LongRideTests(unittest.TestCase):
         return {'cadence_min':60,'cadence_increment':5,'watt_increment':30,'columns':30,
                 'rows':10,'cells':[[-32768,0] for _ in range(300)]}
     def test_continuous_exact_duration_and_identical_probes(self):
-        for minutes in (30,60,90):
+        for minutes in (30,45,60,90):
             workout,windows=long_workout(minutes)
             self.assertEqual(workout.duration,minutes*60)
             self.assertEqual(len(windows),3)
@@ -18,7 +18,7 @@ class LongRideTests(unittest.TestCase):
                     self.assertEqual(workout.at(window['start_s']+t),long_workout(30)[0].at(t))
         with self.assertRaises(ValueError): long_workout(120)
     def test_physical_pause_is_separate_from_identical_probes(self):
-        for minutes in (30,60,90):
+        for minutes in (30,45,60,90):
             workout,windows=long_workout(minutes,stress=True)
             at=minutes*60*.25+30
             self.assertEqual(workout.at(at)[1],0)
@@ -30,7 +30,7 @@ class LongRideTests(unittest.TestCase):
                 for t in range(360): self.assertEqual(workout.at(w['start_s']+t),normal.at(w['start_s']+t))
     def test_sprints_have_exact_timing_and_identical_cadence_plan(self):
         from ss2k_sim.cadence import CadencePlan
-        for minutes in (30,60,90):
+        for minutes in (30,45,60,90):
             workout,probes=long_workout(minutes,stress=True)
             blocks=sprint_windows(minutes); plan=CadencePlan(workout)
             self.assertEqual(workout.duration,minutes*60)

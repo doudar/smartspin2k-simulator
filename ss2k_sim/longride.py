@@ -45,8 +45,10 @@ def sprint_windows(minutes):
 
 
 def long_workout(minutes, *, stress=False):
-    if minutes not in (30, 60, 90):
-        raise ValueError('Long rides must be 30, 60, or 90 minutes')
+    if minutes not in (30, 45, 60, 90):
+        raise ValueError('Long rides must be 30, 45, 60, or 90 minutes')
+    # 45 minutes supports a matching real-ride validation workout. The published
+    # paired sensitivity matrix deliberately remains 90 minutes only.
     # Repeated identical six-minute probes, separated by time-driven endurance
     # work. Every probe has a one-minute common lead-in to reduce entry effects.
     duration = minutes*60
