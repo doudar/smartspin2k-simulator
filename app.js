@@ -5,7 +5,7 @@ const number=v=>typeof v==='number'&&Number.isFinite(v)?v.toFixed(2):'n/a';
 const safeId=s=>typeof s==='string'&&/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,100}$/.test(s);
 const decision=(v,relative=false)=>v===true?'PASS':v===false?(relative?'REGRESSION':'OUTSIDE BAND'):'UNAVAILABLE';
 const desiredSeed='7';
-let current, history, serial=0, desiredScenario=null, desiredDuration=null, desiredTable=null, shortScenario=null;
+let current, history, serial=0, desiredScenario=null, desiredDuration=null, desiredTable=null, desiredSensitivity=null, shortScenario=null;
 ChartHover.init({svg:$('chart'),readout:$('chart-readout')});
 function runDate(md){const value=md.run_completed_at||md.imported_at;if(!value||!Number.isFinite(Date.parse(value)))return 'time not recorded';return new Intl.DateTimeFormat('en-US',{timeZone:'Etc/GMT+5',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(value))+' UTC−05:00';}
 const initialState=s=>({empty:'empty starting table',partial:'partially learned TESTED RANGE',full:'fully learned TESTED RANGE'})[s]||'starting state not recorded';
@@ -14,17 +14,23 @@ function runName(r){return `${runDate(r.metadata)} · ${(r.candidate_commit||'re
 // A branch is a navigation group, never a claim that its snapshots are equivalent.
 function firmwareKey(r){return r.metadata.release_tag?'release:'+r.metadata.release_tag:r.display_ref&&r.display_ref!=='Unrecorded ref'&&!r.display_ref.startsWith('commit ')?'branch:'+r.display_ref:'commit:'+(r.candidate_commit||r.id);}
 function firmwareName(r){return r.metadata.release_tag?`${r.metadata.release_tag} · release${r.metadata.release_published_at?' · '+r.metadata.release_published_at.slice(0,10):''}`:r.display_ref||r.candidate_commit||'Unrecorded firmware';}
-const testType=r=>r.metadata.experiment==='continuous-long-ride-v1'?'long':'short';
+const sprintExperiment='continuous-long-ride-sprints-v2';
+const isLongExperiment=experiment=>['continuous-long-ride-v1',sprintExperiment].includes(experiment);
+const isLongType=type=>['long','long-sprints'].includes(type);
+const testTypes=[['short','Short scenario tests'],['long-sprints','Long rides + 500 W sprints (v2)'],['long','Long rides without sprints (v1 archive)']];
+const testType=r=>r.metadata.experiment===sprintExperiment?'long-sprints':r.metadata.experiment==='continuous-long-ride-v1'?'long':'short';
 const selectionRows=r=>(r.selections||[]).filter(x=>String(x.seed)===desiredSeed);
-function selectedRuns(){return history.filter(r=>selectionRows(r).length&&firmwareKey(r)===$('firmware').value&&testType(r)===$('test-type').value&&($('test-type').value!=='long'||String(r.metadata.experiment_duration_min)===desiredDuration&&r.metadata.initial_state===desiredTable));}
+function matchesLongFilters(r){return r.metadata.initial_state===desiredTable&&(testType(r)==='long-sprints'?r.metadata.experiment_duration_min===90&&String(r.metadata.sensitivity)===desiredSensitivity:String(r.metadata.experiment_duration_min)===desiredDuration);}
+function selectedRuns(){return history.filter(r=>selectionRows(r).length&&firmwareKey(r)===$('firmware').value&&testType(r)===$('test-type').value&&(!isLongType($('test-type').value)||matchesLongFilters(r)));}
 function updateSelectors(preferredId){
- const type=$('test-type').value;options($('test-type'),[['short','Short scenario tests'],['long','Continuous long rides']].map(([v,t])=>[v,t+(history.some(r=>firmwareKey(r)===$('firmware').value&&testType(r)===v&&selectionRows(r).length)?'':' (unavailable)')]),type);
- const long=type==='long';$('duration-filter').hidden=!long;$('table-filter').hidden=!long;
+ const type=$('test-type').value;options($('test-type'),testTypes.map(([v,t])=>[v,t+(history.some(r=>firmwareKey(r)===$('firmware').value&&testType(r)===v&&selectionRows(r).length)?'':' (unavailable)')]),type);
+ const long=isLongType(type),sprints=type==='long-sprints';$('duration-filter').hidden=type!=='long';$('sensitivity-filter').hidden=!sprints;$('table-filter').hidden=!long;
  const family=history.filter(r=>testType(r)===$('test-type').value),group=family.filter(r=>firmwareKey(r)===$('firmware').value&&selectionRows(r).length);
  const durations=[...new Set(family.map(r=>String(r.metadata.experiment_duration_min)))].filter(x=>x!=='undefined').sort((a,b)=>Number(a)-Number(b));
- if(!desiredDuration)desiredDuration=durations[0]||'30';if(!desiredTable)desiredTable='empty';
+ if(!desiredDuration)desiredDuration=durations[0]||'30';if(!desiredTable||sprints&&desiredTable==='partial')desiredTable='empty';if(!desiredSensitivity)desiredSensitivity='3';
  options($('duration'),durations.map(v=>[v,`${v} min${group.some(r=>String(r.metadata.experiment_duration_min)===v)?'':' (unavailable)'}`]),desiredDuration);
- options($('table'),['empty','partial','full'].map(v=>[v,initialState(v)+(group.some(r=>r.metadata.initial_state===v&&String(r.metadata.experiment_duration_min)===desiredDuration)?'':' (unavailable)')]),desiredTable);
+ options($('sensitivity'),['3','5','10'].map(v=>[v,`${v}${group.some(r=>String(r.metadata.sensitivity)===v&&r.metadata.initial_state===desiredTable)?'':' (unavailable)'}`]),desiredSensitivity);
+ options($('table'),(sprints?['empty','full']:['empty','partial','full']).map(v=>[v,initialState(v)+(group.some(r=>r.metadata.initial_state===v&&(sprints?String(r.metadata.sensitivity)===desiredSensitivity:String(r.metadata.experiment_duration_min)===desiredDuration))?'':' (unavailable)')]),desiredTable);
  const names=[...new Set(family.flatMap(r=>selectionRows(r).map(x=>x.scenario)))];
  if(!desiredScenario)desiredScenario=names[0]|| (long?'long_ride':'');
  if(desiredScenario&&!names.includes(desiredScenario))names.unshift(desiredScenario);
@@ -39,12 +45,20 @@ function updateSelectors(preferredId){
 async function choose(preferredId){
  if(updateSelectors(preferredId))return load();
  ++serial;current=null;clearRun();clearChartZoom(true);$('scenario').disabled=false;
- $('notice').textContent='UNAVAILABLE: No recorded '+($('test-type').value==='long'?`${desiredDuration}-minute long ride with ${initialState(desiredTable)}`:'short scenario test')+' for this firmware at seed 7. Seed 7 is used for every displayed test. Your scenario selection is kept. Choose another test or firmware; no previous chart or baseline-only result is shown.';
+ $('notice').textContent='UNAVAILABLE: No recorded '+($('test-type').value==='long-sprints'?`90-minute sprint ride with ${initialState(desiredTable)} and ERG sensitivity ${desiredSensitivity}`:isLongType($('test-type').value)?`${desiredDuration}-minute long ride with ${initialState(desiredTable)}`:'short scenario test')+' for this firmware at seed 7. Seed 7 is used for every displayed test. Your scenario selection is kept. Choose another test or firmware; no previous chart or baseline-only result is shown.';
  $('chart-label').textContent='Selected test unavailable';location.hash='';
 }
 function options(node,items,value){node.replaceChildren();for(const [v,t]of items){const o=el('option',t);o.value=v;node.append(o);}if(value&&items.some(x=>x[0]===value))node.value=value;}
 function card(label,value,note,ok){const d=el('div',undefined,'card');d.append(el('span',label),el('strong',value,ok===true?'good':ok===false?'bad':''),el('span',note));return d;}
-function both(row,key){const overall=row.overall_checks?.[key];if(typeof overall==='boolean')return overall;const v=row[key],sensor=row.reported_power_comparison?.[key];return v===false||sensor===false?false:v===true&&sensor===true?true:null;}
+function combinedDecision(checks,key){const values=checks.map(check=>check?.[key]);return values.includes(false)?false:values.every(value=>value===true)?true:null;}
+function pairDecision(row,key){return combinedDecision([row,row?.reported_power_comparison],key);}
+function both(row,key){
+ const checks=[row,row.reported_power_comparison];if(row.overall_checks)checks.push(row.overall_checks);
+ if(row.scenario==='long_ride'&&isLongExperiment(current?.comparison?.experiment)){
+  for(const field of ['window_comparisons',...(current.comparison.experiment===sprintExperiment?['sprint_comparisons']:[])])for(const name of ['early','middle','late'])checks.push(row[field]?.[name],row[field]?.[name]?.reported_power_comparison);
+ }
+ return combinedDecision(checks,key);
+}
 function line(label,value){$('provenance').append(el('dt',label),el('dd',String(value??'Not recorded')));}
 function link(text,path){const a=el('a',text);a.href=path;return a;}
 // One shared elapsed-time window for every series; y axes stay stable while zooming.
@@ -175,9 +189,9 @@ function tableHead(node,labels){const tr=el('tr');for(const label of labels)tr.a
 function tableRow(node,values){const tr=el('tr');for(const value of values)tr.append(el('td',value));node.append(tr);}
 function clearLearning(){for(const id of ['learning-label','learning-coverage','learning-metrics','learning-events','learning-evidence','learning-status','learning-hashes','learning-decisions','learning-grid'])$(id).replaceChildren();$('learning').hidden=true;}
 function renderLearning(row){
-clearLearning();if(!row||current.comparison.experiment!=='continuous-long-ride-v1'||row.scenario!=='long_ride')return;
+clearLearning();if(!row||!isLongExperiment(current.comparison.experiment)||row.scenario!=='long_ride')return;
 $('learning-grid').textContent=gridDescription(row.metadata?.candidate?.initial_coverage||row.metadata?.baseline?.initial_coverage);
-$('learning').hidden=false;$('learning-label').textContent=rideLabel(row.minutes??current.metadata.experiment_duration_min,row.initial_state??current.metadata.initial_state);
+$('learning').hidden=false;$('learning-scope').textContent='These repeated-probe comparisons are descriptive. They do not establish that learning causes an improvement. The main score table and its decision detail cover the whole ride. The summary absolute and relative cards require the whole ride, every probe'+(current.comparison.experiment===sprintExperiment?' and all three sprint blocks':'')+' to pass, for both plant and delivered sensor.';$('learning-label').textContent=rideLabel(row.minutes??current.metadata.experiment_duration_min,row.initial_state??current.metadata.initial_state);
 for(const [variant,label]of [['baseline','Baseline'],['candidate','Candidate']]){const md=row.metadata?.[variant];$('learning-coverage').append(card(`${label.toUpperCase()} · START → FINISH`,`${testedCoverage(md?.initial_coverage)} → ${testedCoverage(md?.final_coverage)}`,"Measured support on this run’s tested grid; no full-table coverage claim."));}
 tableHead($('learning-metrics'),['Probe / elapsed time','Firmware','Signal','MAE (W)','P95 error (W)','Worst settling (s)','Unsettled steps']);
 tableHead($('learning-hashes'),['Snapshot','Firmware','Table SHA-256']);
@@ -205,28 +219,62 @@ if(safeId(training))$('learning-evidence').append(link('Shared production-learni
 else $('learning-evidence').append(el('span','Shared training evidence link unavailable.'));
 }
 
+function clearSprints(){for(const id of ['sprint-label','sprint-status','sprint-summary','sprint-zoom','sprint-metrics','sprint-decisions','sprint-hashes'])$(id).replaceChildren();$('sprints').hidden=true;}
+function sprintResponse(response,key){
+ if(response?.[key]===null){if(key==='rise_to_450w_s')return 'Not reached in 25 s';if(key==='sprint_settling_s')return 'Not settled in 25 s';if(key==='recovery_settling_s')return 'Not settled in 30 s';}
+ return typeof response?.[key]==='number'&&Number.isFinite(response[key])?number(response[key]):'Unavailable';
+}
+function renderSprints(row){
+ clearSprints();if(!row||current.comparison.experiment!==sprintExperiment||row.scenario!=='long_ride')return;
+ $('sprints').hidden=false;$('sprint-label').textContent=`90 min · ${initialState(row.initial_state??current.metadata.initial_state)} · ERG sensitivity ${row.sensitivity??current.metadata.sensitivity??'unrecorded'}`;
+ tableHead($('sprint-metrics'),['Sprint / elapsed block','Firmware','Signal','Rise to 450 W (s)','Settle at 500 W (s)','Peak (W)','Overshoot (W)','Above 520 W (s)','Outside ±20 W (s)','Recovery settle (s)','Recovery peak (W)','Recovery above 120 W (s)']);
+ tableHead($('sprint-hashes'),['Sprint','Firmware','Starting tested-grid support','Table SHA-256']);
+ const sprint=(variant,name)=>{const values=row.scores?.[variant]?.sprints;return Array.isArray(values)?values.find(value=>value?.name===name):null;};
+ const responseKeys=['rise_to_450w_s','sprint_settling_s','peak_power_w','peak_overshoot_w','above_520w_s','outside_20w_s','recovery_settling_s','recovery_peak_power_w','recovery_above_120w_s'];
+ let present=0;
+ for(const name of ['early','middle','late']){
+  const comparison=row.sprint_comparisons?.[name],abs=pairDecision(comparison,'absolute_passed'),rel=pairDecision(comparison,'relative_passed');
+  $('sprint-summary').append(card(name.toUpperCase()+' SPRINT BLOCK',`Absolute ${decision(abs)}`,`Relative ${decision(rel,true)} · both signals`,abs===false||rel===false?false:abs===true&&rel===true?true:null));
+  const interval=sprint('candidate',name)||sprint('baseline',name),button=el('button',`Zoom to ${name} sprint`);button.type='button';
+  button.disabled=!Number.isFinite(interval?.start_s)||!Number.isFinite(interval?.duration_s)||interval.duration_s<=0;
+  button.addEventListener('click',()=>{if(button.disabled||chartRow!==row||!chartEnd)return;zoomWindow=clampWindow([interval.start_s,interval.start_s+interval.duration_s],chartEnd);selectMode=false;draw(row);});$('sprint-zoom').append(button);
+  for(const [variant,label]of [['baseline','Baseline'],['candidate','Candidate']]){
+   const block=sprint(variant,name);if(block)present++;
+   const elapsed=Number.isFinite(block?.start_s)&&Number.isFinite(block?.duration_s)?`${number(block.start_s/60)}–${number((block.start_s+block.duration_s)/60)} min`:'time unavailable';
+   for(const [signal,response]of [['Plant',block?.response],['Delivered sensor',block?.delivered_sensor_response]])tableRow($('sprint-metrics'),[`${name} · ${elapsed}`,label,signal,...responseKeys.map(key=>sprintResponse(response,key))]);
+   tableRow($('sprint-hashes'),[name,label,testedCoverage(block?.starting_table),block?.table_sha256||'Not recorded']);
+  }
+  for(const [signal,score]of [['Plant',comparison],['Delivered sensor',comparison?.reported_power_comparison]]){
+   $('sprint-decisions').append(el('p',`${name} · ${signal}: absolute ${decision(score?.absolute_passed)} · relative ${decision(score?.relative_passed,true)}`));
+   const ul=el('ul');for(const failure of (score?.failures||[]).filter(f=>signal!=='Plant'||!f.startsWith('delivered sensor: ')))ul.append(el('li',failure,'bad'));$('sprint-decisions').append(ul);
+  }
+ }
+ $('sprint-status').textContent=present===6?'All three sprint blocks are reported separately for both firmware revisions. Whole-ride averages cannot replace these phase-specific measurements.':`${present} / 6 firmware / sprint summaries available. Missing sprint evidence is not inferred.`;
+}
+
 function selectFilters(rows){return rows.find(r=>r.scenario===desiredScenario&&String(r.seed)===desiredSeed);}
-function render(){const m=current.comparison;const longRide=m.experiment==='continuous-long-ride-v1';const rows=(m.runs||[]).filter(r=>String(r.seed)===desiredSeed);const row=selectFilters(rows);const abs=rows.filter(r=>both(r,'absolute_passed')===true).length,rel=rows.filter(r=>both(r,'relative_passed')===true).length;$('overview').replaceChildren(card('EXPERIMENT STATUS',m.status,`${rows.length} recorded scenarios · seed 7`,m.status==='complete'),card('ABSOLUTE BANDS',`${abs} / ${rows.length}`,longRide?'Whole ride + every probe; both signals':'Plant AND delivered sensor',rows.length?abs===rows.length:null),card('RELATIVE REGRESSION',`${rel} / ${rows.length}`,longRide?'Whole ride + every probe vs pinned baseline':'Versus pinned baseline',rows.length?rel===rows.length:null),card('MODEL',String(m.profile_sha256||'Unavailable').slice(0,12),'SHA-256 · fitted bike profile'));
+function render(){const m=current.comparison;const longRide=isLongExperiment(m.experiment),withSprints=m.experiment===sprintExperiment;const checkScope=withSprints?'Whole ride + every probe + all 3 sprints':'Whole ride + every probe';const rows=(m.runs||[]).filter(r=>String(r.seed)===desiredSeed);const row=selectFilters(rows);const abs=rows.filter(r=>both(r,'absolute_passed')===true).length,rel=rows.filter(r=>both(r,'relative_passed')===true).length;$('overview').replaceChildren(card('EXPERIMENT STATUS',m.status,`${rows.length} recorded scenarios · seed 7`,m.status==='complete'),card('ABSOLUTE BANDS',`${abs} / ${rows.length}`,longRide?checkScope+'; both signals':'Plant AND delivered sensor',rows.length?abs===rows.length:null),card('RELATIVE REGRESSION',`${rel} / ${rows.length}`,longRide?checkScope+' vs pinned baseline':'Versus pinned baseline',rows.length?rel===rows.length:null),card('MODEL',String(m.profile_sha256||'Unavailable').slice(0,12),'SHA-256 · fitted bike profile'));
 $('notice').textContent=m.status==='complete'?`${m.budget_status||'Provisional engineering budgets'}. ${rows.length-abs} pairs outside one or more absolute bands. This is a model result, not a hardware pass.`:`${m.status.toUpperCase()}: ${m.error||current.metadata.reason||'No complete result available.'}`;
 $('notice').textContent+=` Tested candidate: ${(m.firmware?.candidate?.commit||history.find(r=>r.id===current.id)?.candidate_commit||'revision not recorded').slice(0,12)}. Branch snapshots can differ between tests.`;
-$('metrics').replaceChildren();$('decisions').replaceChildren();renderLearning(row);if(row){$('chart-label').textContent=`${row.scenario} / seed ${row.seed}`;draw(row);const head=el('tr');for(const t of ['Signal / metric','Baseline','Candidate','Delta','Relative allowance'])head.append(el('th',t));$('metrics').append(head);for(const [signal,sub] of [['Plant',null],['Delivered sensor','delivered_sensor_metrics']]){const base=sub?row.scores?.baseline?.[sub]:row.scores?.baseline,cand=sub?row.scores?.candidate?.[sub]:row.scores?.candidate,changes=sub?row.reported_power_comparison?.changes:row.changes;for(const metric of ['mae_w','p95_error_w','overshoot_w','undershoot_w','outside_band_percent','steady_rmse_w','steady_variation_w_per_s','unsettled_steps','worst_settling_s']){const tr=el('tr');for(const t of [`${signal} · ${metric.replaceAll('_',' ')}`,number(base?.[metric]),number(cand?.[metric]),number(changes?.[metric]?.delta),number(changes?.[metric]?.allowance)])tr.append(el('td',t));$('metrics').append(tr);}}
+$('metrics').replaceChildren();$('decisions').replaceChildren();renderLearning(row);renderSprints(row);if(row){$('chart-label').textContent=`${row.scenario} / seed ${row.seed}`+(withSprints?` / 90 min / ERG sensitivity ${row.sensitivity??current.metadata.sensitivity}`:'');draw(row);const head=el('tr');for(const t of ['Signal / metric','Baseline','Candidate','Delta','Relative allowance'])head.append(el('th',t));$('metrics').append(head);for(const [signal,sub] of [['Plant',null],['Delivered sensor','delivered_sensor_metrics']]){const base=sub?row.scores?.baseline?.[sub]:row.scores?.baseline,cand=sub?row.scores?.candidate?.[sub]:row.scores?.candidate,changes=sub?row.reported_power_comparison?.changes:row.changes;for(const metric of ['mae_w','p95_error_w','overshoot_w','undershoot_w','outside_band_percent','steady_rmse_w','steady_variation_w_per_s','unsettled_steps','worst_settling_s']){const tr=el('tr');for(const t of [`${signal} · ${metric.replaceAll('_',' ')}`,number(base?.[metric]),number(cand?.[metric]),number(changes?.[metric]?.delta),number(changes?.[metric]?.allowance)])tr.append(el('td',t));$('metrics').append(tr);}}
 for(const [label,score] of [['Plant',row],['Delivered sensor',row.reported_power_comparison]]){const p=el('p',`${longRide?'Whole ride · ':''}${label}: absolute ${decision(score?.absolute_passed)} · relative ${decision(score?.relative_passed,true)}`);$('decisions').append(p);const ul=el('ul');for(const f of (score?.failures||[]).filter(f=>label!=='Plant'||!f.startsWith('delivered sensor: ')))ul.append(el('li',f,'bad'));$('decisions').append(ul);}}else{clearChartZoom(true);$('chart').replaceChildren();$('motor-note').textContent='';$('cadence-note').textContent='';$('chart-label').textContent='Selected scenario / seed unavailable';const explanation=`${desiredScenario||'No scenario'} / seed ${desiredSeed||'not selected'} is unavailable in this run. Your selection is kept; switch back or choose an available combination.`;$('notice').textContent+=' '+explanation;$('decisions').append(el('p',explanation));}
-$('provenance').replaceChildren();const md=current.metadata;line('Tested firmware ref',history.find(r=>r.id===current.id)?.display_ref||md.candidate_ref||md.release_tag||'Not recorded');line('Run ID',current.id);line('Displayed simulation seed',7);line('Evidence scope','Charts and summary cards use seed 7 only. Original downloads may also contain archived runs with other seeds.');line('Experiment completed (UTC)',md.run_completed_at||'Not recorded');line('Evidence imported (UTC)',md.imported_at);line('Candidate release',md.release_tag||'Development commit');line('Release published (UTC)',md.release_published_at||'Not a release / not recorded');line('Baseline release',md.baseline_release_tag);line('Baseline release published',md.baseline_release_published_at);line('Candidate commit',m.firmware?.candidate?.commit);line('Baseline commit',m.firmware?.baseline?.commit);line('Adapter commit',md.adapter_commit);line('Adapter SHA-256',m.adapter?.sha256);line('Adapter patch SHA-256',md.adapter_patch_sha256||'No compatibility patch');line('Simulator commit',md.simulator_commit);line('Simulator source SHA-256',m.simulator_sha256);line('Profile SHA-256',m.profile_sha256);line('Package config SHA-256',m.package_config_sha256);line('Candidate source SHA-256',m.firmware?.candidate?.source_sha256);line('Baseline source SHA-256',m.firmware?.baseline?.source_sha256);line('Source dirty flags',JSON.stringify(Object.fromEntries(Object.entries(m.firmware||{}).map(([k,v])=>[k,v.dirty]))));line('Coverage',m.coverage_level);line('Runtime toolchain',JSON.stringify(md.runtime_toolchain||'Not recorded; adapter-provenance toolchain, if present, describes original local validation only'));line('Provenance notes',md.notes);
+$('provenance').replaceChildren();const md=current.metadata;line('Tested firmware ref',history.find(r=>r.id===current.id)?.display_ref||md.candidate_ref||md.release_tag||'Not recorded');line('Run ID',current.id);line('Experiment version',m.experiment||'Short scenario suite');if(longRide)line('Shared training run ID',md.training_run_id);if(withSprints){line('Ride duration',`${md.experiment_duration_min} minutes`);line('ERG sensitivity',row?.sensitivity??md.sensitivity);}line('Displayed simulation seed',7);line('Evidence scope','Charts and summary cards use seed 7 only. Original downloads may also contain archived runs with other seeds.');line('Experiment completed (UTC)',md.run_completed_at||'Not recorded');line('Evidence imported (UTC)',md.imported_at);line('Candidate release',md.release_tag||'Development commit');line('Release published (UTC)',md.release_published_at||'Not a release / not recorded');line('Baseline release',md.baseline_release_tag);line('Baseline release published',md.baseline_release_published_at);line('Candidate commit',m.firmware?.candidate?.commit);line('Baseline commit',m.firmware?.baseline?.commit);line('Adapter commit',md.adapter_commit);line('Adapter SHA-256',m.adapter?.sha256);line('Adapter patch SHA-256',md.adapter_patch_sha256||'No compatibility patch');line('Simulator commit',md.simulator_commit);line('Simulator source SHA-256',m.simulator_sha256);line('Profile SHA-256',m.profile_sha256);line('Package config SHA-256',m.package_config_sha256);line('Candidate source SHA-256',m.firmware?.candidate?.source_sha256);line('Baseline source SHA-256',m.firmware?.baseline?.source_sha256);line('Source dirty flags',JSON.stringify(Object.fromEntries(Object.entries(m.firmware||{}).map(([k,v])=>[k,v.dirty]))));line('Coverage',m.coverage_level);line('Runtime toolchain',JSON.stringify(md.runtime_toolchain||'Not recorded; adapter-provenance toolchain, if present, describes original local validation only'));line('Provenance notes',md.notes);
 $('downloads').replaceChildren(link('Full raw evidence ZIP',`runs/${current.id}/evidence.zip`),link('Comparison JSON',`runs/${current.id}/comparison.json`),link('File checksums',`runs/${current.id}/SHA256SUMS.txt`));if(/^https:\/\/github\.com\/doudar\/smartspin2k-simulator\/actions\/runs\/\d+$/.test(md.workflow_url||''))$('downloads').append(link('GitHub Actions run',md.workflow_url));$('json').textContent=JSON.stringify(m,null,2);}
 async function load(){const id=$('history').value;if(!safeId(id))throw Error('Invalid run identifier');const token=++serial;try{clearRun();$('notice').textContent='Loading selected experiment…';const result=await fetch(`runs/${id}/data.json`);if(!result.ok)throw Error('Run data unavailable');const data=await result.json();try{const motor=await fetch(`motor-v1/${id}.json`);if(motor.ok)data.motor=await motor.json();}catch(e){data.motor=null;}try{const cadence=await fetch(`cadence-v1/${id}.json`);data.cadence=cadence.ok?await cadence.json():null;}catch(e){data.cadence=null;}if(token!==serial)return;current=data;$('scenario').disabled=false;render();location.hash=encodeURIComponent(id);}catch(e){if(token===serial)fail(e);}}
 $('history').addEventListener('change',()=>choose($('history').value).catch(fail));
 $('firmware').addEventListener('change',()=>choose().catch(fail));
-$('test-type').addEventListener('change',()=>{if($('test-type').value==='long'){shortScenario=desiredScenario;desiredScenario='long_ride';}else desiredScenario=shortScenario;return choose().catch(fail);});
+$('test-type').addEventListener('change',()=>{if(isLongType($('test-type').value)){if(desiredScenario!=='long_ride')shortScenario=desiredScenario;desiredScenario='long_ride';}else desiredScenario=shortScenario;return choose().catch(fail);});
+$('sensitivity').addEventListener('change',()=>{desiredSensitivity=$('sensitivity').value;return choose().catch(fail);});
 $('duration').addEventListener('change',()=>{desiredDuration=$('duration').value;return choose().catch(fail);});
 $('table').addEventListener('change',()=>{desiredTable=$('table').value;return choose().catch(fail);});
 $('scenario').addEventListener('change',()=>{desiredScenario=$('scenario').value;return choose($('history').value).catch(fail);});
-function clearRun(){clearChartZoom();for(const id of ['overview','chart','metrics','decisions','provenance','downloads','json','chart-label','motor-note','cadence-note'])$(id).replaceChildren();clearLearning();$('scenario').disabled=true;}
+function clearRun(){clearChartZoom();for(const id of ['overview','chart','metrics','decisions','provenance','downloads','json','chart-label','motor-note','cadence-note'])$(id).replaceChildren();clearLearning();clearSprints();$('scenario').disabled=true;}
 function fail(e){clearRun();clearChartZoom(true);$('notice').textContent=`Unable to load results: ${e.message}. No previous run is being displayed.`;}
 (async()=>{const r=await fetch(`history.json?v=${Date.now()}`,{cache:'no-store'});if(!r.ok)throw Error('History unavailable');history=await r.json();history.sort((a,b)=>(b.metadata.run_completed_at||b.metadata.imported_at||'').localeCompare(a.metadata.run_completed_at||a.metadata.imported_at||''));
  const initial=history.find(r=>r.id===decodeURIComponent(location.hash.slice(1)))||history.find(r=>selectionRows(r).length)||history[0];if(!initial){$('notice').textContent='No experiments published yet.';return;}
  const groups=[...new Map(history.map(r=>[firmwareKey(r),firmwareName(r)])).entries()];options($('firmware'),groups,firmwareKey(initial));
- options($('test-type'),[['short','Short scenario tests'],['long','Continuous long rides']],testType(initial));
- desiredDuration=initial.metadata.experiment_duration_min?String(initial.metadata.experiment_duration_min):null;desiredTable=initial.metadata.initial_state||null;
+ options($('test-type'),testTypes,testType(initial));
+ desiredDuration=initial.metadata.experiment_duration_min?String(initial.metadata.experiment_duration_min):null;desiredTable=initial.metadata.initial_state||null;desiredSensitivity=initial.metadata.sensitivity?String(initial.metadata.sensitivity):null;
  const first=selectionRows(initial)[0];desiredScenario=first?.scenario||null;
  await choose(initial.id);
 })().catch(fail);
