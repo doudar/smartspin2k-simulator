@@ -1,14 +1,34 @@
-# Continuous long rides and starting power tables
+# Continuous 90-minute rides, sprint response and ERG sensitivity
 
-`python -m ss2k_sim.longride` adds 30, 60 and 90 minute sessions. Each timed
-ride uses **one native process and one continuously evolving production ERG /
-power-table state**. No reset occurs between the identical six-minute early,
-middle and late probes. The full 20 ms trace, packet acquisitions/deliveries,
-production log and minute-level table snapshots are retained.
+The current `continuous-long-ride-sprints-v2` experiment runs **six paired cases**:
+90 minutes × empty / fully learned declared range × ERG sensitivity 3 / 5 / 10.
+Every ride uses seed 7 and one native process with continuously evolving production
+ERG / power-table state. Existing v1 30/60/90-minute, partial-table experiments
+remain immutable historical evidence; they are not relabeled as sprint rides.
 
-## Starting states
+## Exact sprint schedule
 
-Generate fixture tables before the timed experiment:
+Each ride includes three identical blocks, with the same 85 rpm cadence cue and
+segment-relative modeled drift:
+
+| Block | 100 W lead-in | 500 W sprint | 100 W recovery |
+|---|---|---|---|
+| Early | 6:00–6:30 | 6:30–6:55 | 6:55–7:25 |
+| Middle | 48:00–48:30 | 48:30–48:55 | 48:55–49:25 |
+| Late | 82:35–83:05 | 83:05–83:30 | 83:30–84:00 |
+
+Blocks replace endurance time so duration remains exactly 90 minutes. Their
+30 / 25 / 30-second boundaries are exact simulation time, carried through the
+adapter's actual FTMS Set Target Power procedure (opcode 0x05). Successful raw
+control payloads and their simulation times are saved in `ftms_control_packets.json`.
+These are virtual packet ingress, not over-the-air Bluetooth measurements.
+
+The unchanged six-minute learning probes start at 0:00, 42:00 and 84:00. No
+sprint overlaps a probe, sensor dropout or pedaling pause. A common 30-second
+100 W lead-in reduces entry-state differences; it does not reset the motor,
+controller or learner or make their different histories identical.
+
+## Reproduce the matrix
 
 ```sh
 python -m ss2k_sim.longride train \
@@ -17,70 +37,83 @@ python -m ss2k_sim.longride train \
 python -m ss2k_sim.longride compare \
   --firmware-root ../firmware-adapter --candidate-root ../firmware-candidate \
   --baseline-root ../firmware-baseline --fixtures output/long-training \
-  --output output/long-paired --minutes 30 60 90 \
-  --states empty partial full --seeds 7 --stress
+  --output output/long-paired --minutes 90 --states empty full \
+  --sensitivities 3 5 10 --seeds 7 --stress
 ```
 
-The adapter must expose `Bridge.load_power_table`. Baseline stays pinned to
-082d1ee26ddb009d5132547087f77be03d1b0ab7. The same adapter, physical model,
-sensor schedules, seed and immutable initial fixture are used for both builds.
+The adapter must expose `Bridge.load_power_table`. Baseline remains pinned to
+082d1ee26ddb009d5132547087f77be03d1b0ab7. Sensitivity is passed to the native
+adapter initialization, which calls production `userConfig->setERGSensitivity`;
+it is not a simulator gain multiplier. Both builds receive exactly the same
+sensitivity, physical model, sensor schedules, cadence plan, seed and initial table.
+No controller tuning or acceptance-threshold changes are part of this experiment.
+
+## Earned starting tables
 
 - **Empty:** no stored entries at time zero.
-- **Partial:** an actual intermediate training snapshot with some, but not all,
-  tested-range cells supported.
-- **Fully learned tested range:** a real training snapshot with readings >= 2
-  and a valid stored position at every one of the 25 grid points: 150, 180, 210,
-  240 and 270 W at 75, 80, 85, 90 and 95 rpm. The padding covers the nominal
-  80–90 rpm probes plus their ±1.2 rpm modeled drift. This is deliberately **not a claim that
-  all 300 firmware cells, every possible cadence, or hardware behavior are known**.
+- **Fully learned declared range:** an actual production-learning snapshot with
+  readings >= 2 and valid stored positions at **45 grid cells**: 90, 120, 150,
+  180, 210, 240, 270, 480 and 510 W at 75, 80, 85, 90 and 95 rpm. The 90/120 and
+  480/510 W cells bracket the requested 100/500 W blocks. This does not claim all
+  300 firmware cells are known, nor that every production lookup/gain is trusted.
+  Runtime confidence and slope gates can still choose fallback behavior.
 
-Fixture training is a separate 90-minute ride through unmodified production
-learning, using seed 7 and 216-second holds at those grid points.
-Training and timed rides now use the same seed 7 for repeatability. This is not
-independent multi-seed robustness coverage. Older evidence keeps its original
-seed and fixture provenance; it is never relabeled. No table
-cell is calculated from the physical model or inserted to manufacture coverage.
-If training does not earn complete coverage, the tool reports that and does not
-write a full fixture. Fixture hashes, training time, segments, seed, firmware,
-adapter and profile identity are recorded. The fixture comes from the candidate
-revision and is reused unchanged for baseline/candidate, isolating controller
-behavior from differing initial tables. This is not a comparison of how the two
-versions independently train from scratch; the empty-start rides cover that.
+Training is a separate 90-minute ride with 120-second holds at those grid points,
+seed 7 and canonical ERG sensitivity 5. All cells come from unmodified production
+learning; no cell is calculated from the physical model or inserted to manufacture
+coverage. A full fixture is written only if all 45 cells actually earn support.
+The same candidate-trained, immutable fixture seeds both firmware builds and all
+three sensitivities. This isolates controller behavior, not how each sensitivity
+independently trains from scratch; empty-start rides cover that evolution.
+Hashes, source revisions, profile identity, segments, seed and training sensitivity
+are retained. Seed 7 repeatability is not multi-seed robustness coverage.
 
-The adapter import is a **RAM snapshot persistence analogue**, performed before
-first tick. Production flash save/load, serialized calibration trailers and
-persistence reliability are not exercised. Learned table cells are restored;
-controller confidence, timers, acquisition buffers and transient state start
-fresh. During the timed ride, all those states evolve without restart.
+Import is a **RAM snapshot persistence analogue**, before the first tick.
+Production flash serialization and save/load reliability are not tested. Stored
+cells are restored, while controller confidence, timers and transient state start
+fresh. All state then evolves continuously without restarts.
 
 ## Measurements and interpretation
 
-Every probe begins with the same 60-second 180 W / 85 rpm lead-in, then repeats
-240 W, 150 W, 210 W at 80 rpm, 210 W at 90 rpm, and 180 W at 85 rpm. Entry motor
-state can still differ; the lead-in reduces this confound but does not magically
-make those histories identical. Scores include power settling, errors, oscillation
-and overshoot, separately for effective plant and delivered meter power.
+Each sprint has its own plant and delivered-CPS summary and comparison, separate
+from whole-ride and early/middle/late probe scores. Reports include first reach of
+450 W, first five-second dwell within ±20 W of 500 W, peak power/overshoot,
+seconds above 520 W, seconds outside ±20 W during the 25-second effort, recovery
+settling to 100 W, recovery peak and seconds above 120 W. Null rise/settling means
+the threshold was never achieved within that effort or recovery, not zero seconds.
+The original provisional absolute and relative budgets apply to every 85-second
+block, including recovery. A long steady section cannot hide a missed sprint.
+Large immediate post-sprint error is included, not discarded as a warm-up period.
 
-Table coverage is a read-only snapshot of actual stored cells. Learning-event
-counts come from production logs and distinguish raw stable observations from
-insertion attempts. They are **not all successful insertions**. Table/fallback
-gain counts are sampled production logs, **not exhaustive lookup-call counts**.
-Trusted seek events and time spent seeking are also reported. No arbitrary
-learning-improvement threshold is used and later performance need not improve.
+The unchanged six-minute probes repeat a 60-second 180 W / 85 rpm lead-in, then
+240 W, 150 W, 210 W at 80 rpm, 210 W at 90 rpm, and 180 W at 85 rpm. Whole-ride,
+probe and sprint decisions include both effective plant and delivered meter power.
+No improvement from learning is assumed and a provisional failure alone is not
+proof of a firmware defect.
 
-`--stress` adds a 12-second power-packet dropout and a 60-second zero-cadence
-rider cue away from the repeated probes, without restarting controller/table state.
-The rider decelerates and accelerates at its configured bounded rates; cadence is
-not instantaneously forced to zero. Real FTMS pause/resume packets are sent too,
-but those packets only change training/status in current production. The physical
-pedaling interruption exercises actual low-cadence ERG and learning gates. Whole-ride scores include these
-interruptions rather than hiding them. The existing provisional engineering
-budgets apply to whole rides and each probe, including delivered-sensor scores;
-a long steady section cannot erase a failing probe. These budgets remain
-uncalibrated and a failure is not automatically a firmware defect.
+`--stress` retains a 12-second power-packet dropout at 22:30 and a 60-second
+zero-cadence rider cue at 23:00–24:00. Bounded deceleration/reacceleration and real
+FTMS pause/resume packets are included. Current production pause packets change
+status only; the physical pedaling cue exercises actual low-cadence gates.
+Whole-ride scores include interruptions and unattainable power at zero cadence.
 
-Raw data remain at full resolution. Dashboard views may be reduced for display
-only; source traces and learning evidence are the authoritative artifacts.
-Radio, ESP32/FreeRTOS timing, flash persistence and mechanical fidelity remain
-outside coverage. The fitted effective plant is an assumption, not independent
-hardware truth.
+Learning-event counts distinguish raw observations and insertion attempts;
+these are not all accepted insertions. Table/fallback gain counts are sampled
+production logs, not exhaustive lookup counts. Table coverage is read-only actual
+stored-cell evidence. Minute-level snapshots plus sprint/probe-start snapshots,
+full 20 ms traces, sensor acquisitions/deliveries and production logs are retained.
+
+## Physical-model limits
+
+The effective plant is fitted to one recorded ride, not independent hardware
+truth. Its original fit covered positions 6292–18881 and cadence 56–114 rpm.
+Positions/cadences outside those ranges are model extrapolation. Every ride records
+seconds outside the original fit ranges, both overall and for each sprint block.
+Within-range membership alone does not establish hardware fidelity at 500 W or
+validate the short transient. Training at high-power / low-cadence grid points
+can extend outside recorded support even though the production learner genuinely
+earns the simulated cells. Radio, ESP32/FreeRTOS scheduling, flash persistence,
+backlash and mechanical fidelity remain outside coverage.
+
+Dashboard traces may be reduced for display only. Full-rate archived evidence
+is authoritative, and previous scenario versions remain separately labeled.

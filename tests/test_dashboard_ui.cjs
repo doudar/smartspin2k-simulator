@@ -12,7 +12,7 @@ class Element {
   createSVGPoint(){return {x:0,y:0,matrixTransform(){return {x:this.x,y:this.y};}};}getScreenCTM(){return {inverse(){return {};}};}
   async change(v){this.value=v;await this.events.change?.();}
 }
-const ids=['zoom-in','zoom-out','zoom-reset','zoom-earlier','zoom-later','zoom-select','zoom-range','firmware','test-type','duration','table','duration-filter','table-filter','history','scenario','notice','overview','chart','chart-label','metrics','decisions','provenance','downloads','json','motor-note','cadence-note','chart-readout','learning','learning-label','learning-coverage','learning-metrics','learning-events','learning-evidence','learning-status','learning-hashes','learning-decisions','learning-grid'];
+const ids=['sensitivity','sensitivity-filter','learning-scope','sprints','sprint-label','sprint-status','sprint-summary','sprint-zoom','sprint-metrics','sprint-decisions','sprint-hashes','zoom-in','zoom-out','zoom-reset','zoom-earlier','zoom-later','zoom-select','zoom-range','firmware','test-type','duration','table','duration-filter','table-filter','history','scenario','notice','overview','chart','chart-label','metrics','decisions','provenance','downloads','json','motor-note','cadence-note','chart-readout','learning','learning-label','learning-coverage','learning-metrics','learning-events','learning-evidence','learning-status','learning-hashes','learning-decisions','learning-grid'];
 
 const score={mae_w:1,p95_error_w:2};const row=(scenario,seed)=>({scenario,seed,absolute_passed:true,relative_passed:true,failures:[],scores:{baseline:score,candidate:score},reported_power_comparison:{absolute_passed:true,relative_passed:true,failures:[]}});
 const make=(id,rows,date)=>({id,metadata:{run_completed_at:date},comparison:{status:'complete',runs:rows},traces:{}});
@@ -54,10 +54,27 @@ const legacy=make('legacy-27',[row('long_ride',27)],'2026-10-13T17:00:00Z');
 Object.assign(legacy.metadata,{experiment:'continuous-long-ride-v1',experiment_duration_min:45,initial_state:'partial',candidate_ref:'erg-spike-gate'});
 legacy.comparison.experiment='continuous-long-ride-v1';legacy.traces={'long_ride-27':{candidate:[[0,999,999,999],[2700,999,999,999]]}};runs[legacy.id]=legacy;
 history.push({id:legacy.id,metadata:legacy.metadata,display_ref:'erg-spike-gate',candidate_commit:'e'.repeat(40),selections:[{scenario:'long_ride',seed:27}]});
+// V2 keeps its new six-case sensitivity matrix separate from archived v1 rides.
+for(const state of ['empty','full'])for(const sensitivity of [3,5,10]){
+ const run=JSON.parse(JSON.stringify(runs['long-full'])),id=`sprint-${state}-${sensitivity}`;run.id=id;
+ Object.assign(run.metadata,{experiment:'continuous-long-ride-sprints-v2',experiment_duration_min:90,initial_state:state,sensitivity,training_run_id:'sprint-training',run_completed_at:'2026-10-05T17:00:00Z'});
+ run.comparison.experiment=run.metadata.experiment;run.comparison.runs=run.comparison.runs.slice(0,1);
+ const r=run.comparison.runs[0];Object.assign(r,{initial_state:state,sensitivity,artifact_key:`long_90m_${state}_sensitivity${sensitivity}-7`,overall_checks:{absolute_passed:true,relative_passed:true,passed:true}});
+ for(const probe of Object.values(r.window_comparisons))Object.assign(probe,{absolute_passed:true,relative_passed:true,failures:[]});
+ r.sprint_comparisons={};
+ for(const name of ['early','middle','late'])r.sprint_comparisons[name]={absolute_passed:true,relative_passed:true,failures:[],reported_power_comparison:{absolute_passed:!(sensitivity===3&&name==='late'),relative_passed:!(sensitivity===3&&name==='late'),failures:sensitivity===3&&name==='late'?['sprint sensor miss exceeds allowance']:[]}};
+ const response={rise_to_450w_s:null,sprint_settling_s:null,peak_power_w:440,peak_overshoot_w:0,above_520w_s:0,outside_20w_s:25,recovery_settling_s:null,recovery_peak_power_w:431,recovery_above_120w_s:22};
+ const grid={tested_range_supported:state==='full'?45:0,tested_range_required:45,tested_range_cells:[75,80,85,90,95].flatMap(cadence_rpm=>[90,120,150,180,210,240,270,480,510].map(watts=>({cadence_rpm,watts})))};
+ for(const variant of ['baseline','candidate']){
+  r.metadata[variant].initial_coverage=grid;
+  r.scores[variant].sprints=['early','middle','late'].map((name,i)=>({name,start_s:[360,2880,4955][i],duration_s:85,sprint_start_s:[390,2910,4985][i],recovery_start_s:[415,2935,5010][i],cadence_rpm:85,response:{...response},delivered_sensor_response:{...response,peak_power_w:435},starting_table:grid,table_sha256:'a'.repeat(64)}));
+ }
+ runs[id]=run;history.push({id,metadata:run.metadata,display_ref:'erg-spike-gate',candidate_commit:'d'.repeat(40),selections:[{scenario:'long_ride',seed:7}]});
+}
 const source=fs.readFileSync(require('node:path').join(__dirname,'../dashboard/app.js'),'utf8');
 const tick=()=>new Promise(setImmediate);
 function harness(hash=''){
- const nodes=Object.fromEntries(ids.map(id=>[id,new Element(['firmware','test-type','duration','table','history','scenario'].includes(id)?'select':'div')]));
+ const nodes=Object.fromEntries(ids.map(id=>[id,new Element(['firmware','test-type','duration','sensitivity','table','history','scenario'].includes(id)?'select':'div')]));
  const pending=new Map(),requests=[],lookups=[];
  const hover={initCalls:[],clearCalls:0,updates:[],data:null,init(config){this.initCalls.push(config);},clear(){this.clearCalls++;this.data=null;},update(data){this.data=data;this.updates.push(data);}};
  const ctx={ChartHover:hover,document:{events:{},addEventListener(event,handler){this.events[event]=handler;},getElementById:id=>{lookups.push(id);return nodes[id];},createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)},location:{hash},Intl,Date,console,fetch:async url=>{
@@ -72,7 +89,7 @@ function harness(hash=''){
  return {nodes,ctx,requests,lookups,hover,delay(url){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});pending.set(url,{promise});return {resolve(value){pending.delete(url);resolve(value);},reject(error){pending.delete(url);reject(error);}};}};
 }
 const main=harness(),{nodes,ctx}=main;
-const cleared=(all=true)=>{assert.equal(main.hover.data,null);assert.equal(nodes.chart.children.length,0);assert.ok(nodes['zoom-in'].disabled);assert.ok(nodes['zoom-select'].disabled);assert.equal(nodes.metrics.children.length,0);assert.equal(nodes.learning.hidden,true);assert.equal(nodes['learning-metrics'].children.length,0);assert.equal(nodes['learning-evidence'].children.length,0);if(all)assert.equal(nodes.downloads.children.length,0);else assert.ok(nodes.downloads.children.every(n=>n.href.includes(`runs/${nodes.history.value}/`)));};
+const cleared=(all=true)=>{assert.equal(main.hover.data,null);assert.equal(nodes.chart.children.length,0);assert.ok(nodes['zoom-in'].disabled);assert.ok(nodes['zoom-select'].disabled);assert.equal(nodes.metrics.children.length,0);assert.equal(nodes.learning.hidden,true);assert.equal(nodes.sprints.hidden,true);assert.equal(nodes['sprint-metrics'].children.length,0);assert.equal(nodes['learning-metrics'].children.length,0);assert.equal(nodes['learning-evidence'].children.length,0);if(all)assert.equal(nodes.downloads.children.length,0);else assert.ok(nodes.downloads.children.every(n=>n.href.includes(`runs/${nodes.history.value}/`)));};
 (async()=>{
  await tick();assert.equal(main.hover.initCalls.length,1);assert.equal(main.hover.initCalls[0].svg,nodes.chart);assert.equal(main.hover.initCalls[0].readout,nodes['chart-readout']);assert.equal(nodes.firmware.value,'branch:erg-spike-gate');assert.equal(nodes['test-type'].value,'short');assert.equal(nodes.scenario.value,'steps');assert.equal(nodes.history.value,'a');assert.equal(main.lookups.includes('seed'),false);
  assert.deepEqual(nodes.history.children.map(n=>n.value),['a','a-old']);assert.equal(nodes.firmware.children.filter(n=>n.value==='branch:erg-spike-gate').length,1);assert.ok(nodes.firmware.children.some(n=>n.value==='release:v25.1'&&n.textContent.includes('2025-01-01')));
@@ -97,7 +114,7 @@ const cleared=(all=true)=>{assert.equal(main.hover.data,null);assert.equal(nodes
  const target=nodes.chart.children.find(n=>n.stroke==='#b2c1cc');assert.ok(target.points.includes('470.00,160.00')); // time 2 s uses the same x transform as cadence
  assert.equal(nodes.chart.children.filter(n=>n['data-plot-hit']==='true').length,1);
  runs.b.motor={traces:{}};vm.runInContext('current.motor={traces:{}};render()',ctx);assert.match(nodes['motor-note'].textContent,/unavailable/);assert.equal(nodes.chart.children.filter(n=>n['data-series']==='actual-motor').length,0);
- assert.equal(nodes.learning.hidden,true);assert.equal(nodes['learning-metrics'].children.length,0);
+ assert.equal(nodes.learning.hidden,true);assert.equal(nodes.sprints.hidden,true);assert.equal(nodes['sprint-metrics'].children.length,0);assert.equal(nodes['learning-metrics'].children.length,0);
  // Missing received cadence stays missing; an explicit zero remains a recorded value.
  vm.runInContext("current.cadence={traces:{'ramp-7':[[0,0,null],[4,90,null]]}};render()",ctx);
  assert.match(nodes['cadence-note'].textContent,/Firmware-received cadence is not available/);assert.equal(nodes.chart.children.filter(n=>n['data-series']==='received-cadence').length,0);assert.equal(nodes.chart.children.filter(n=>n['data-series']==='modeled-cadence').length,1);assert.ok(nodes.chart.children.find(n=>n['data-series']==='modeled-cadence').points.includes('65.00,440.00'));
@@ -172,7 +189,35 @@ const cleared=(all=true)=>{assert.equal(main.hover.data,null);assert.equal(nodes
  await zn.firmware.change('branch:erg-spike-gate');assert.equal(range(),null);
  run('current.traces={};current.motor={traces:{}};current.cadence={traces:{}};render()');assert.ok(zn['zoom-in'].disabled);assert.equal(range(),null);
  assert.equal(main.lookups.includes('seed'),false);assert.equal(z.lookups.includes('seed'),false);assert.ok(main.hover.clearCalls>0);
+ // V2 deep links initialize sensitivity, keep v1 isolated, and never offer partial tables or other durations.
+ const sp=harness('#sprint-full-3'),sn=sp.nodes,srun=code=>vm.runInContext(code,sp.ctx);await tick();
+ assert.equal(sn['test-type'].value,'long-sprints');assert.equal(sn.sensitivity.value,'3');assert.equal(sn['sensitivity-filter'].hidden,false);assert.equal(sn['duration-filter'].hidden,true);
+ assert.deepEqual(sn.table.children.map(n=>n.value),['empty','full']);assert.deepEqual(sn.sensitivity.children.map(n=>n.value),['3','5','10']);assert.equal(sn.history.value,'sprint-full-3');assert.equal(sn.sprints.hidden,false);
+ assert.match(sn['sprint-label'].textContent,/90 min.*fully learned TESTED RANGE.*ERG sensitivity 3/);assert.match(sn['learning-grid'].textContent,/90, 120, 150, 180, 210, 240, 270, 480, 510 W/);
+ assert.match(sn['learning-coverage'].textContent,/45 \/ 45 tested cells/);assert.match(sn['learning-scope'].textContent,/all three sprint blocks/);assert.equal(sn['learning-evidence'].children[0].href,'runs/sprint-training/evidence.zip');
+ assert.match(sn.provenance.textContent,/continuous-long-ride-sprints-v2/);assert.match(sn.provenance.textContent,/Shared training run IDsprint-training/);assert.match(sn.provenance.textContent,/ERG sensitivity3/);
+ assert.equal(sn['sprint-metrics'].children.length,13);assert.equal(sn['sprint-hashes'].children.length,7);assert.equal(sn['sprint-summary'].children.length,3);assert.equal(sn['sprint-zoom'].children.length,3);
+ assert.match(sn['sprint-status'].textContent,/All three sprint blocks/);assert.match(sn['sprint-metrics'].textContent,/Not reached in 25 s/);assert.match(sn['sprint-metrics'].textContent,/Not settled in 25 s/);assert.match(sn['sprint-metrics'].textContent,/Not settled in 30 s/);assert.match(sn['sprint-metrics'].textContent,/435.00/);
+ assert.match(sn['sprint-decisions'].textContent,/late · Delivered sensor: absolute OUTSIDE BAND · relative REGRESSION/);assert.match(sn['sprint-decisions'].textContent,/sprint sensor miss exceeds allowance/);
+ // A false sprint signal overrides even a stale true overall decision; whole-ride averages still pass.
+ assert.match(sn.decisions.textContent,/Whole ride · Plant: absolute PASS/);assert.equal(sn.overview.children[1].children[1].textContent,'0 / 1');assert.equal(sn.overview.children[2].children[1].textContent,'0 / 1');
+ assert.match(sn.overview.children[1].textContent,/all 3 sprints/);const oldZoom=sn['sprint-zoom'].children[0];oldZoom.events.click();
+ assert.deepEqual(JSON.parse(srun('JSON.stringify(zoomWindow)')),[360,445]);assert.equal(sp.hover.data.from,360);assert.equal(sp.hover.data.to,445);assert.equal(sp.hover.data.series.length,7);
+ assert.ok(sn.chart.children.some(n=>n['data-series']==='actual-motor'));assert.ok(sn.chart.children.some(n=>n['data-series']==='modeled-cadence'));
+ sn['sprint-zoom'].children[2].events.click();assert.deepEqual(JSON.parse(srun('JSON.stringify(zoomWindow)')),[4955,5040]);
+ await sn.sensitivity.change('5');assert.equal(sn.history.value,'sprint-full-5');assert.equal(sn.overview.children[1].children[1].textContent,'1 / 1');assert.match(sn['sprint-label'].textContent,/ERG sensitivity 5/);
+ oldZoom.events.click();assert.deepEqual(JSON.parse(srun('JSON.stringify(zoomWindow)')),[4955,5040]); // Detached old controls cannot move the new run.
+ await sn.sensitivity.change('10');assert.equal(sn.history.value,'sprint-full-10');await sn.table.change('empty');assert.equal(sn.history.value,'sprint-empty-10');assert.match(sn['learning-coverage'].textContent,/0 \/ 45 tested cells/);
+ // Missing phase metrics remain explicit. Missing decisions must not produce a pass.
+ const missingSprint=runs['sprint-empty-10'].comparison.runs[0];delete missingSprint.scores.candidate.sprints[0].response;missingSprint.scores.baseline.sprints.pop();delete missingSprint.sprint_comparisons.middle;
+ srun('render()');assert.match(sn['sprint-status'].textContent,/5 \/ 6/);assert.match(sn['sprint-metrics'].textContent,/Unavailable/);assert.match(sn['sprint-summary'].children[1].textContent,/UNAVAILABLE/);assert.equal(sn.overview.children[1].children[1].textContent,'0 / 1');
+ // Sensitivity changes and unavailable firmware clear old sprint evidence immediately, including pending fetches.
+ const spSlow=sp.delay('runs/sprint-empty-5/data.json'),spPending=sn.sensitivity.change('5');await tick();assert.equal(sn.sprints.hidden,true);assert.equal(sn['sprint-metrics'].children.length,0);
+ await sn.sensitivity.change('3');spSlow.resolve({ok:true,json:async()=>runs['sprint-empty-5']});await spPending;assert.equal(sn.history.value,'sprint-empty-3');assert.match(sn['sprint-label'].textContent,/ERG sensitivity 3/);
+ await sn.firmware.change('branch:branch-b');assert.equal(sn.sensitivity.value,'3');assert.equal(sn.sprints.hidden,true);assert.equal(sn['sprint-metrics'].children.length,0);assert.equal(sn.chart.children.length,0);assert.match(sn.notice.textContent,/90-minute sprint ride.*ERG sensitivity 3/);
+ await sn.firmware.change('branch:erg-spike-gate');assert.equal(sn.history.value,'sprint-empty-3');await sn['test-type'].change('long');assert.equal(sn.sprints.hidden,true);assert.equal(sn['sprint-hashes'].children.length,0);assert.equal(sn['sensitivity-filter'].hidden,true);assert.equal(sn['duration-filter'].hidden,false);assert.deepEqual(sn.table.children.map(n=>n.value),['empty','partial','full']);
+ assert.ok(sn['test-type'].children.some(n=>n.value==='long'&&n.textContent.includes('v1 archive')));await sn.duration.change('30');assert.equal(sn.history.value,'long-empty');assert.doesNotMatch(sn['learning-scope'].textContent,/all three sprint blocks/);
  const html=fs.readFileSync(require('node:path').join(__dirname,'../dashboard/index.html'),'utf8');assert.doesNotMatch(html,/id=["']seed["']/);assert.match(html,/not accepted insertions/);assert.match(html,/loaded into RAM; flash persistence is not tested/);assert.match(html,/do not establish that learning causes an improvement/);
- console.log('PASS: fixed seed 7, seed-filtered summaries and default/deep-link selection, chart zoom region/buttons/touch/cancellation/bounds/async/unavailable, firmware grouping, exact snapshots, deep links, absent combinations, preserved filters, motor axes/gaps, long-ride learning evidence, safe links, unavailable recovery, and stale-fetch isolation');
+ console.log('PASS: v2 sensitivity matrix, independent sprint decisions/response/zoom and archive isolation; fixed seed 7, seed-filtered summaries and default/deep-link selection, chart zoom region/buttons/touch/cancellation/bounds/async/unavailable, firmware grouping, exact snapshots, deep links, absent combinations, preserved filters, motor axes/gaps, long-ride learning evidence, safe links, unavailable recovery, and stale-fetch isolation');
 })().catch(e=>{console.error(e);process.exitCode=1;});
 

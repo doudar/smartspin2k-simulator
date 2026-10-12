@@ -11,6 +11,7 @@ SAFE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,100}$')
 ALLOWED = {'.json', '.csv', '.log', '.ptab', '.txt'}
 MAX_FILE = 32 * 1024 * 1024
 MAX_RUN = 200 * 1024 * 1024
+LONG_RIDE_EXPERIMENTS = {'continuous-long-ride-v1', 'continuous-long-ride-sprints-v2'}
 # Verified tested ref at experiment time; never infer the candidate from simulator main.
 # Exact commits also recorded with candidate_ref='erg-spike-gate' in archived runs.
 # Push-triggered short experiments omit candidate_ref; group only these verified
@@ -148,7 +149,7 @@ def motor_display(run,data):
             matches=[entry for entry in z.infolist() if entry.filename==name]
             if not matches: continue
             if len(matches)!=1 or matches[0].file_size>MAX_FILE: raise ValueError('Invalid motor evidence')
-            result['traces'][key]=motor_chart(z.read(matches[0]),preserve_extrema=data['comparison'].get('experiment')=='continuous-long-ride-v1')
+            result['traces'][key]=motor_chart(z.read(matches[0]),preserve_extrema=data['comparison'].get('experiment') in LONG_RIDE_EXPERIMENTS)
     return result
 
 def cadence_chart(raw):
@@ -197,7 +198,7 @@ def cadence_display(run,data):
 def validate_metadata(metadata):
     valid_tree(metadata)
     if not isinstance(metadata,dict): raise ValueError('Metadata must be an object')
-    for key in ('run_started_at','run_completed_at','imported_at','candidate_ref','release_tag','release_published_at','baseline_release_tag','baseline_release_published_at','adapter_commit','simulator_commit','notes','workflow_url','workflow_conclusion','workflow_updated_at'):
+    for key in ('run_started_at','run_completed_at','imported_at','candidate_ref','release_tag','release_published_at','baseline_release_tag','baseline_release_published_at','adapter_commit','simulator_commit','notes','workflow_url','workflow_conclusion','workflow_updated_at','experiment','training_run_id'):
         if metadata.get(key) is not None and not isinstance(metadata[key],str): raise ValueError('Invalid metadata text')
     return metadata
 
@@ -219,7 +220,7 @@ def materialize(source, dest, run_id, metadata):
             for variant in ('baseline','candidate'):
                 artifact_key=row.get('artifact_key',key)
                 name=f'{variant}/{artifact_key}/trace.csv'
-                if name in files: summary['traces'][key][variant]=chart(files[name],preserve_extrema=manifest.get('experiment')=='continuous-long-ride-v1')
+                if name in files: summary['traces'][key][variant]=chart(files[name],preserve_extrema=manifest.get('experiment') in LONG_RIDE_EXPERIMENTS)
         (dest/'data.json').write_text(json.dumps(summary,allow_nan=False,separators=(',',':')))
         (dest/'comparison.json').write_bytes(files['comparison.json'])
         (dest/'SHA256SUMS.txt').write_text('\n'.join(f'{hashlib.sha256(data).hexdigest()}  {name}' for name,data in files.items())+'\n')

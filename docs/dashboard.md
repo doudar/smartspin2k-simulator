@@ -7,7 +7,7 @@ GitHub Actions** and a deployment succeeds. No personal access token is needed.
 
 ## What it shows
 
-- Immutable run history, then scenario and seed selection.
+- Firmware-first navigation, immutable run history and scenario selection; all displayed tests use seed 7.
 - Target, actual modeled plant, baseline plant and delivered-sensor power traces.
 - Candidate simulated actual motor position in red, with a separate right-hand steps axis.
   Its source is `motor_steps`, the native virtual motor’s current completed-step counter
@@ -114,29 +114,55 @@ inferred positions. The display decimation preserves gap markers and endpoints.
 
 ## Continuous long rides and starting-table evidence
 
-The **Long ride learning experiment** workflow trains one table through the real
-production learner, then runs30/60/90-minute continuous paired rides with empty,
-partial and fully supported starting fixtures. "Fully learned" means all25
-measured grid points at150–270W and75–95rpm, padding the nominal80–90rpm rider
-cue for its cadence variability. It never means every cell of the300-cell table.
-Both revisions receive the identical earned fixture; no plant-to-table oracle or
-controller replacement is used. RAM import is not a flash-persistence test.
+The **Long ride learning experiment** workflow now publishes
+`continuous-long-ride-sprints-v2`: six 90-minute paired cases, with **empty or
+fully learned starting tables × ERG sensitivity 3, 5 or 10**, all at seed 7.
+Training uses one canonical sensitivity-5 production-learning run, and every
+sensitivity receives the same earned fixture for its selected starting state.
+Both revisions receive identical starting-table data; no plant-to-table oracle
+or controller replacement is used. RAM import is not a flash-persistence test.
+
+The v2 full fixture earned all **45 declared tested-grid cells** at
+90, 120, 150, 180, 210, 240, 270, 480 and 510 W × 75, 80, 85, 90 and 95 rpm.
+Those cells bracket the 100 W recovery and 500 W sprint targets. “Fully learned”
+means measured support on this declared grid, never the entire 300-cell firmware
+table or a calibrated physical-bike validation. Read the [long-ride methodology
+and model caveats](long-rides.md) before interpreting high-power behavior.
+
+Archived `continuous-long-ride-v1` runs remain separately accessible as **Long
+rides without sprints (v1 archive)**. They retain their original 30/60/90-minute
+and empty/partial/full matrix, original 25-cell grid at 150–270 W × 75–95 rpm,
+original scenarios and provenance. V2 does not relabel or rewrite that evidence.
 
 Every case gets an immutable evidence record. The scenario remains `long_ride`
-so switching duration or starting state preserves scenario/seed selection. The
-original artifact folder names remain in the ZIP and the manifest records their
-mapping. One shared training archive is linked from all nine cases rather than
-copied into each. It includes original training traces, table snapshots and
-partial/full fixture files. Missing or incomplete requested cases remain visible.
+while sensitivity is included in its record ID and original artifact folder name,
+preventing collisions between the three configurations. One shared training
+archive is linked by its exact training run ID from all six cases. It includes
+original training traces, snapshots and earned fixture files. Missing or
+incomplete requested cases remain visible.
 
 The learning panel shows initial/final measured support and repeated early,
-middle and late probes. Whole-ride plus all three probe decisions, for both plant
-and delivered-sensor signals, determine aggregate quality results. Log counts
-are observations/insertion attempts or sampled gain messages, not counts of
-accepted table inserts or exhaustive lookups. Comparisons are descriptive:
-learning is not assumed to improve performance. The stress path includes a12s
-sensor outage and60s actual cadence-zero rider pause, with FTMS status procedures,
-placed away from the identical probes.
+middle and late six-minute probes. A separate **500 W sprint response** panel
+shows the three early/middle/late 85-second blocks at 85 rpm: 100 W for 30 seconds,
+500 W for 25 seconds and 100 W for 30 seconds. Each block has a shared-chart zoom
+button, plant and delivered-sensor response metrics for both revisions, separate
+block decisions, and starting-table coverage and fingerprints.
+
+Sprint response metrics expose rise time to 450 W, settling at 500 W, peak power,
+overshoot, time above 520 W, time outside ±20 W, and recovery settling, peak and
+time above 120 W. Recorded null rise/settling results explicitly say the threshold
+was not reached or settled during that phase. Missing data remains unavailable.
+These full-rate phase measurements cannot be replaced by whole-ride averages;
+block pass/fail applies the recorded budgets to the entire 85-second block.
+
+Whole-ride, all three probe and all three sprint-block decisions, for **both plant
+and delivered-sensor signals**, determine v2 aggregate quality results. A failure
+in any sprint signal defeats an overall pass. V1 aggregate results still use its
+whole ride and probes only. Log counts are observations/insertion attempts or
+sampled gain messages, not counts of accepted inserts or exhaustive lookups.
+Comparisons are descriptive; learning is not assumed to improve performance.
+The sensor outage and actual cadence-zero rider pause remain separate from the
+probes and sprint blocks; see the methodology for the exact schedule.
 
 Long-ride display traces retain endpoints, bounded target transitions and
 per-bucket extrema to preserve brief overshoots; raw20ms CSV files remain complete.
@@ -149,18 +175,21 @@ payloads are reported as incomplete, never executed or silently truncated.
 ## Firmware-first test navigation
 
 The primary selector groups by recorded firmware branch or release. Test type,
-ride duration, starting table, scenario and seed are separate controls. The
+starting table and scenario are separate controls. V2 offers ERG sensitivity
+3/5/10 at a fixed 90-minute duration; only archived v1 offers duration and partial
+starting-table controls. All displayed tests use seed 7, without a seed selector. The
 secondary experiment selector shows the original experiment date, exact candidate
 commit and unique record ID. A branch grouping is navigation only: different
 tests can use different revisions, simulators or adapters. No scores are pooled
 across records and no equivalence between branch snapshots is assumed.
 
-Switching firmware keeps the chosen test, duration, starting table, scenario and
-seed. Missing combinations remain selected and explicitly unavailable, with no
-stale chart or learning panel. A firmware with no matching experiment also clears
+Switching firmware keeps the chosen test, duration or sensitivity, starting table,
+scenario and fixed seed. Missing combinations remain selected and explicitly unavailable, with no
+stale chart, learning panel or sprint panel. A firmware with no matching experiment also clears
 its evidence links and provenance. Switching test type deliberately selects a
 suitable scenario (remembering the previous short scenario), while retaining the
-seed. A missing seed is never silently replaced. The newest matching recorded
+seed. Selecting v2 from an archived partial-table case uses the supported empty
+starting state. A missing seed is never silently replaced. The newest matching recorded
 experiment is selected when changing firmware; other dates remain selectable.
 Existing run-ID URL fragments still open the corresponding exact evidence record.
 
@@ -168,7 +197,8 @@ Long-ride coverage is currently limited to the recorded development snapshot.
 Historical release baselines inside paired results are not relabeled as standalone
 candidate experiments. This navigation update reruns no physics and changes no
 immutable run files, original scores, evidence ZIPs or checksums. The renderer
-adds only a scenario/seed selection catalog to the regenerated history index.
+adds selection metadata to the regenerated history index; versioned motor and
+cadence presentation sidecars are derived separately from the original archive.
 
 ### Cadence and shared inspection
 

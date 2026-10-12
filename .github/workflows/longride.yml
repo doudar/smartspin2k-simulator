@@ -41,7 +41,7 @@ jobs:
         env:
           SS2K_FIRMWARE_ROOT: ${{ github.workspace }}/adapter
         run: python -m unittest discover -s simulator/tests -v
-      - name: Train actual production table and run nine paired long rides
+      - name: Train actual production table and run six paired sprint rides
         run: python simulator/dashboard/longride_experiment.py
       - uses: actions/upload-artifact@v4
         if: always()
@@ -54,4 +54,4 @@ jobs:
         run: |
           echo '## Continuous long-ride learning evidence' >> "$GITHUB_STEP_SUMMARY"
           echo '[Dashboard](https://doudar.github.io/smartspin2k-simulator/) · [Raw artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})' >> "$GITHUB_STEP_SUMMARY"
-          echo '30/60/90min × empty/partial/fully learned tested range × seed7, paired against26.10.1. Full means25 measured150–270W/75–95rpm cells, not all300firmware cells. Whole-ride AND early/middle/late plant/sensor quality checks determine the result. Failed/incomplete experiments remain visible; shared training evidence is linked once. Full-rate raw artifacts expire after90days in Actions; retained Pages archives follow repository history policy.' >> "$GITHUB_STEP_SUMMARY"
+          echo '90min × empty/full × ERG sensitivity3/5/10 × seed7, paired against26.10.1. Full means45 production-learned90/120/150/180/210/240/270/480/510W at75–95rpm cells, not all300firmware cells. Whole-ride AND early/middle/late probe AND sprint plant/sensor quality checks determine the result. Failed/incomplete experiments remain visible; shared training evidence is linked once. Full-rate raw artifacts expire after90days in Actions; retained Pages archives follow repository history policy.' >> "$GITHUB_STEP_SUMMARY"

@@ -96,6 +96,17 @@ covered by deliberate negative fixtures. A bad baseline does not excuse a bad
 candidate: absolute budgets still apply. Exit 1 means failed comparison; exit 2
 means infrastructure/input failure. Partial experiment evidence is retained.
 
+## Long rides with sprints
+
+The current [long-ride experiment](docs/long-rides.md) runs six 90-minute paired
+cases: empty/full learned starting table × ERG sensitivity 3/5/10, seed 7.
+Three repeated blocks request 100 W for 30 s, 500 W for 25 s, then 100 W for 30 s.
+Each block has independent response and recovery scores, alongside continuous
+learning probes. The earned full fixture covers 45 declared cells bracketing the
+100/500 W targets; this is virtual model evidence, not hardware certification.
+[Dashboard](https://doudar.github.io/smartspin2k-simulator/) retains older scenarios
+without relabeling them.
+
 ## Optional real-hardware cross-check
 
 ```sh
