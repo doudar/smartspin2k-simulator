@@ -1,0 +1,4425 @@
+{
+  "status": "complete",
+  "passed": false,
+  "coverage_level": "Production BLE packet decode/collect + FTMS procedure + ERG + virtual motor; no radio, ESP32 scheduler or physical hardware",
+  "firmware": {
+    "baseline": {
+      "root": "/home/runner/work/smartspin2k-simulator/smartspin2k-simulator/baseline",
+      "commit": "082d1ee26ddb009d5132547087f77be03d1b0ab7",
+      "source_sha256": "d280e5504c9e91ef984e28085fe77c928fd2ff3c6dcb4db3518ad71e58297b51",
+      "dirty": false
+    },
+    "candidate": {
+      "root": "/home/runner/work/smartspin2k-simulator/smartspin2k-simulator/candidate-26.9.15",
+      "commit": "8e861fbbf9e162497647318e3ddb8823926fcce9",
+      "source_sha256": "f921eae09797c8a00040ec04fc47ef8dee928666ac9458121f25bb62ee1630ff",
+      "dirty": false
+    }
+  },
+  "adapter": {
+    "firmware_root": "/home/runner/work/smartspin2k-simulator/smartspin2k-simulator/adapter",
+    "sha256": "098a900211f1803e2723634325061b6185b1d5e2fb20e13e8698d42097910f32",
+    "files": [
+      "bridge.py",
+      "native.cpp",
+      "virtual_ble.py",
+      "virtual_ble_facade.h",
+      "virtual_ble_runtime.inc",
+      "virtual_ftms.py",
+      "virtual_ftms.hpp"
+    ]
+  },
+  "simulator_sha256": "0b3cfb550139fe5f48b371904466289e371016442400e892f813bc1bb42975fe",
+  "profile_sha256": "782a93ca67c555558f1d1133369139498023b29d07cfbf5048cf4c517a0d2ad8",
+  "package_config_sha256": "f0cdb35ca7bfc2606b579087f35875ad337de6022e13fb0c4dc1bbc8c694272e",
+  "bike": {
+    "position_knots": [
+      0,
+      6000,
+      8000,
+      10000,
+      12000,
+      14000,
+      16000,
+      18000,
+      20000,
+      24482
+    ],
+    "watts_at_80rpm": [
+      0,
+      23.43102633024972,
+      30.205542983775036,
+      64.01337391541917,
+      123.54432267450241,
+      189.40622743931186,
+      284.40907188025204,
+      413.77933813788474,
+      514.4721236278851,
+      945.4629853544773
+    ],
+    "cadence_exponent": 1.7614167093513402,
+    "lag_s": 0.7754499480433025,
+    "delay_s": 1.117460704267879,
+    "sample_period_s": 1.0,
+    "noise_w": 8.096509811914622,
+    "noise_correlation_s": 1.5124234341042593,
+    "min_position": 0,
+    "max_position": 24482,
+    "backlash_steps": 0,
+    "surface": null,
+    "floor_watts_at_80rpm": 0,
+    "floor_cadence_exponent": 1.5
+  },
+  "seeds": [
+    7,
+    27,
+    91
+  ],
+  "absolute_budgets": {
+    "mae_w": 25.0,
+    "p95_error_w": 60.0,
+    "overshoot_w": 150.0,
+    "steady_rmse_w": 35.0,
+    "unsettled_steps": 0.0
+  },
+  "budget_status": "Provisional engineering budgets, not calibrated acceptance or hardware fidelity proof",
+  "scenarios": [
+    {
+      "name": "steps",
+      "segments": [
+        {
+          "duration_s": 60,
+          "start_w": 150,
+          "end_w": 150,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 250,
+          "end_w": 250,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 160,
+          "end_w": 160,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 180,
+          "end_w": 180,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "bbbadca3fbb4dad740fff5caf516f718b6934c6ab7b0d961101914d895835986",
+      "power_schedule": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence_schedule": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      }
+    },
+    {
+      "name": "ramp",
+      "segments": [
+        {
+          "duration_s": 45,
+          "start_w": 120,
+          "end_w": 120,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 90,
+          "start_w": 120,
+          "end_w": 300,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 45,
+          "start_w": 300,
+          "end_w": 300,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 300,
+          "end_w": 120,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "7fdcb9639837e292b76229667f90a38e4ac8dfdef1670c413fddc0b6d7af2dcc",
+      "power_schedule": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence_schedule": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      }
+    },
+    {
+      "name": "cadence_shift",
+      "segments": [
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 90
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 65
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 105
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "4338b5bb18df0b3a5203452c662424d3a6625a385c20c688dfbfbcf18f607dbc",
+      "power_schedule": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence_schedule": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      }
+    },
+    {
+      "name": "slow_power",
+      "segments": [
+        {
+          "duration_s": 60,
+          "start_w": 150,
+          "end_w": 150,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 250,
+          "end_w": 250,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 160,
+          "end_w": 160,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 180,
+          "end_w": 180,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "bbbadca3fbb4dad740fff5caf516f718b6934c6ab7b0d961101914d895835986",
+      "power_schedule": {
+        "period_s": 2,
+        "latency_s": 0.35,
+        "jitter_s": 0.1,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence_schedule": {
+        "period_s": 0.25,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      }
+    },
+    {
+      "name": "fast_power_slow_cadence",
+      "segments": [
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 90
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 65
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 105
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "4338b5bb18df0b3a5203452c662424d3a6625a385c20c688dfbfbcf18f607dbc",
+      "power_schedule": {
+        "period_s": 0.25,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence_schedule": {
+        "period_s": 2,
+        "latency_s": 0.4,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      }
+    },
+    {
+      "name": "sensor_outage",
+      "segments": [
+        {
+          "duration_s": 60,
+          "start_w": 150,
+          "end_w": 150,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 250,
+          "end_w": 250,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 160,
+          "end_w": 160,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 180,
+          "end_w": 180,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "bbbadca3fbb4dad740fff5caf516f718b6934c6ab7b0d961101914d895835986",
+      "power_schedule": {
+        "period_s": 1,
+        "latency_s": 0.2,
+        "jitter_s": 0.1,
+        "phase_s": 0.0,
+        "dropouts": [
+          [
+            90,
+            98
+          ]
+        ]
+      },
+      "cadence_schedule": {
+        "period_s": 0.5,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": [
+          [
+            150,
+            158
+          ]
+        ]
+      }
+    }
+  ],
+  "runs": [
+    {
+      "scenario": "steps",
+      "seed": 7,
+      "scores": {
+        "baseline": {
+          "mae_w": 9.186410105874176,
+          "p95_error_w": 40.09221397133581,
+          "overshoot_w": 78.44954871830092,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 7.85,
+          "steady_p95_error_w": 7.287190873743904,
+          "steady_rmse_w": 4.1469445027301965,
+          "steady_variation_w_per_s": 0.9269544151722755,
+          "unsettled_steps": 0,
+          "worst_settling_s": 7.200000000000003,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 7.200000000000003,
+              "overshoot_w": 6.537246882129864,
+              "undershoot_w": 103.51867200086679
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 6.019999999999996,
+              "overshoot_w": 78.44954871830092,
+              "undershoot_w": 4.882804783461211
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 0.0,
+              "overshoot_w": 4.927178041843348,
+              "undershoot_w": 19.280337749305147
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 13.5,
+            "p95_error_w": 64.0,
+            "overshoot_w": 75.0,
+            "undershoot_w": 119.0,
+            "outside_band_percent": 13.75,
+            "steady_p95_error_w": 18.0,
+            "steady_rmse_w": 8.909108946590687,
+            "steady_variation_w_per_s": 7.534090909090909,
+            "unsettled_steps": 0,
+            "worst_settling_s": 9.0,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 9.0,
+                "overshoot_w": 16.0,
+                "undershoot_w": 106.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 8.0,
+                "overshoot_w": 75.0,
+                "undershoot_w": 21.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 7.0,
+                "overshoot_w": 14.0,
+                "undershoot_w": 23.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 9.736587137331977,
+          "p95_error_w": 51.888786721260516,
+          "overshoot_w": 79.97755933505718,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 9.6,
+          "steady_p95_error_w": 6.733980875254594,
+          "steady_rmse_w": 3.9390465553177543,
+          "steady_variation_w_per_s": 0.7027208433813488,
+          "unsettled_steps": 0,
+          "worst_settling_s": 5.920000000000002,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 5.920000000000002,
+              "overshoot_w": 8.94487801442699,
+              "undershoot_w": 103.00758643332807
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 4.159999999999997,
+              "overshoot_w": 79.97755933505718,
+              "undershoot_w": 5.325458931234607
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 0.0,
+              "overshoot_w": 4.782555591772592,
+              "undershoot_w": 19.927922153059598
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 14.395833333333334,
+            "p95_error_w": 73.0,
+            "overshoot_w": 77.0,
+            "undershoot_w": 119.0,
+            "outside_band_percent": 14.583333333333334,
+            "steady_p95_error_w": 19.049999999999272,
+            "steady_rmse_w": 9.294861184786164,
+            "steady_variation_w_per_s": 7.375,
+            "unsettled_steps": 0,
+            "worst_settling_s": 7.0,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 7.0,
+                "overshoot_w": 18.0,
+                "undershoot_w": 106.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 6.0,
+                "overshoot_w": 77.0,
+                "undershoot_w": 22.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 7.0,
+                "overshoot_w": 16.0,
+                "undershoot_w": 23.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": true,
+      "relative_passed": false,
+      "failures": [
+        "p95_error_w: regression 11.797 exceeds allowance 5.000",
+        "delivered sensor: p95_error_w: 73.0 exceeds absolute budget 60.0",
+        "delivered sensor: p95_error_w: regression 9.000 exceeds allowance 6.400"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 9.186410105874176,
+          "candidate": 9.736587137331977,
+          "delta": 0.5501770314578014,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "p95_error_w": {
+          "baseline": 40.09221397133581,
+          "candidate": 51.888786721260516,
+          "delta": 11.796572749924707,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 4.1469445027301965,
+          "candidate": 3.9390465553177543,
+          "delta": -0.20789794741244227,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 0.9269544151722755,
+          "candidate": 0.7027208433813488,
+          "delta": -0.22423357179092673,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        },
+        "worst_settling_s": {
+          "baseline": 7.200000000000003,
+          "candidate": 5.920000000000002,
+          "delta": -1.2800000000000011,
+          "allowance": 2.0,
+          "direction": "better"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": false,
+        "failures": [
+          "p95_error_w: 73.0 exceeds absolute budget 60.0",
+          "p95_error_w: regression 9.000 exceeds allowance 6.400"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 13.5,
+            "candidate": 14.395833333333334,
+            "delta": 0.8958333333333339,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "p95_error_w": {
+            "baseline": 64.0,
+            "candidate": 73.0,
+            "delta": 9.0,
+            "allowance": 6.4,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 8.909108946590687,
+            "candidate": 9.294861184786164,
+            "delta": 0.38575223819547766,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 7.534090909090909,
+            "candidate": 7.375,
+            "delta": -0.15909090909090917,
+            "allowance": 1.1301136363636364,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          },
+          "worst_settling_s": {
+            "baseline": 9.0,
+            "candidate": 7.0,
+            "delta": -2.0,
+            "allowance": 2.0,
+            "direction": "better"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "steps",
+      "seed": 27,
+      "scores": {
+        "baseline": {
+          "mae_w": 8.971211161255834,
+          "p95_error_w": 34.810872264105484,
+          "overshoot_w": 96.23279016908822,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 8.125,
+          "steady_p95_error_w": 8.360780717216636,
+          "steady_rmse_w": 4.374106576204219,
+          "steady_variation_w_per_s": 1.0227897277929925,
+          "unsettled_steps": 0,
+          "worst_settling_s": 5.480000000000004,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 4.739999999999995,
+              "overshoot_w": 6.232928354869216,
+              "undershoot_w": 108.6141590945071
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 5.480000000000004,
+              "overshoot_w": 96.23279016908822,
+              "undershoot_w": 6.817189379780729
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 1.3400000000000034,
+              "overshoot_w": 1.8030804926879966,
+              "undershoot_w": 23.156129975832215
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 14.966666666666667,
+            "p95_error_w": 71.0,
+            "overshoot_w": 94.0,
+            "undershoot_w": 126.0,
+            "outside_band_percent": 12.916666666666666,
+            "steady_p95_error_w": 17.0,
+            "steady_rmse_w": 9.343149599810786,
+            "steady_variation_w_per_s": 7.096590909090909,
+            "unsettled_steps": 0,
+            "worst_settling_s": 7.0,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 7.0,
+                "overshoot_w": 18.0,
+                "undershoot_w": 126.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 7.0,
+                "overshoot_w": 94.0,
+                "undershoot_w": 17.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 2.0,
+                "overshoot_w": 23.0,
+                "undershoot_w": 32.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 9.844045400669886,
+          "p95_error_w": 45.803581566698796,
+          "overshoot_w": 95.03825190648942,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 10.766666666666671,
+          "steady_p95_error_w": 8.42635836554046,
+          "steady_rmse_w": 4.069484586161163,
+          "steady_variation_w_per_s": 0.8129160330847891,
+          "unsettled_steps": 0,
+          "worst_settling_s": 10.36,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 10.36,
+              "overshoot_w": 26.27351271093204,
+              "undershoot_w": 108.73388451777174
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 3.3400000000000034,
+              "overshoot_w": 95.03825190648942,
+              "undershoot_w": 5.55016914463053
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 1.3600000000000136,
+              "overshoot_w": 2.244444828061063,
+              "undershoot_w": 23.513132722754875
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 16.466666666666665,
+            "p95_error_w": 92.0,
+            "overshoot_w": 92.0,
+            "undershoot_w": 125.0,
+            "outside_band_percent": 17.5,
+            "steady_p95_error_w": 19.0,
+            "steady_rmse_w": 9.948199167018455,
+            "steady_variation_w_per_s": 7.1022727272727275,
+            "unsettled_steps": 0,
+            "worst_settling_s": 13.0,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 13.0,
+                "overshoot_w": 38.0,
+                "undershoot_w": 125.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 6.0,
+                "overshoot_w": 92.0,
+                "undershoot_w": 16.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 2.0,
+                "overshoot_w": 24.0,
+                "undershoot_w": 30.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": true,
+      "relative_passed": false,
+      "failures": [
+        "p95_error_w: regression 10.993 exceeds allowance 5.000",
+        "worst_settling_s: regression 4.880 exceeds allowance 2.000",
+        "delivered sensor: p95_error_w: 92.0 exceeds absolute budget 60.0",
+        "delivered sensor: p95_error_w: regression 21.000 exceeds allowance 7.100",
+        "delivered sensor: worst_settling_s: regression 6.000 exceeds allowance 2.000"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 8.971211161255834,
+          "candidate": 9.844045400669886,
+          "delta": 0.8728342394140522,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "p95_error_w": {
+          "baseline": 34.810872264105484,
+          "candidate": 45.803581566698796,
+          "delta": 10.992709302593312,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 4.374106576204219,
+          "candidate": 4.069484586161163,
+          "delta": -0.30462199004305557,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 1.0227897277929925,
+          "candidate": 0.8129160330847891,
+          "delta": -0.20987369470820338,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        },
+        "worst_settling_s": {
+          "baseline": 5.480000000000004,
+          "candidate": 10.36,
+          "delta": 4.8799999999999955,
+          "allowance": 2.0,
+          "direction": "worse"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": false,
+        "failures": [
+          "p95_error_w: 92.0 exceeds absolute budget 60.0",
+          "p95_error_w: regression 21.000 exceeds allowance 7.100",
+          "worst_settling_s: regression 6.000 exceeds allowance 2.000"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 14.966666666666667,
+            "candidate": 16.466666666666665,
+            "delta": 1.4999999999999982,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "p95_error_w": {
+            "baseline": 71.0,
+            "candidate": 92.0,
+            "delta": 21.0,
+            "allowance": 7.1000000000000005,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 9.343149599810786,
+            "candidate": 9.948199167018455,
+            "delta": 0.6050495672076686,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 7.096590909090909,
+            "candidate": 7.1022727272727275,
+            "delta": 0.005681818181818343,
+            "allowance": 1.0644886363636363,
+            "direction": "worse"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          },
+          "worst_settling_s": {
+            "baseline": 7.0,
+            "candidate": 13.0,
+            "delta": 6.0,
+            "allowance": 2.0,
+            "direction": "worse"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "steps",
+      "seed": 91,
+      "scores": {
+        "baseline": {
+          "mae_w": 9.338553647145693,
+          "p95_error_w": 39.56577860007866,
+          "overshoot_w": 81.37701510666548,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 8.750000000000004,
+          "steady_p95_error_w": 8.598414196067784,
+          "steady_rmse_w": 4.286276068159686,
+          "steady_variation_w_per_s": 0.9219065623445052,
+          "unsettled_steps": 0,
+          "worst_settling_s": 5.459999999999994,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 4.900000000000006,
+              "overshoot_w": 8.266456627953858,
+              "undershoot_w": 101.73040349138901
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 5.459999999999994,
+              "overshoot_w": 81.37701510666548,
+              "undershoot_w": 6.041274220529971
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 0.4000000000000057,
+              "overshoot_w": 9.124124354101298,
+              "undershoot_w": 20.884435521766846
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 13.975,
+            "p95_error_w": 71.0,
+            "overshoot_w": 90.0,
+            "undershoot_w": 125.0,
+            "outside_band_percent": 12.5,
+            "steady_p95_error_w": 17.049999999999272,
+            "steady_rmse_w": 9.09731340073052,
+            "steady_variation_w_per_s": 7.096590909090909,
+            "unsettled_steps": 0,
+            "worst_settling_s": 8.0,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 6.0,
+                "overshoot_w": 16.0,
+                "undershoot_w": 107.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 8.0,
+                "overshoot_w": 90.0,
+                "undershoot_w": 18.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 3.0,
+                "overshoot_w": 14.0,
+                "undershoot_w": 28.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 10.51952490079744,
+          "p95_error_w": 67.08412631390539,
+          "overshoot_w": 82.20552010229045,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 10.933333333333326,
+          "steady_p95_error_w": 7.972786098221071,
+          "steady_rmse_w": 4.778545356878953,
+          "steady_variation_w_per_s": 0.7567989752408475,
+          "unsettled_steps": 0,
+          "worst_settling_s": 5.420000000000002,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 5.420000000000002,
+              "overshoot_w": 12.396899313570032,
+              "undershoot_w": 101.29049254245905
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 3.739999999999995,
+              "overshoot_w": 82.20552010229045,
+              "undershoot_w": 5.996750245535566
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 1.4199999999999875,
+              "overshoot_w": 8.559283932263895,
+              "undershoot_w": 23.11953917163936
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 15.754166666666666,
+            "p95_error_w": 89.0,
+            "overshoot_w": 91.0,
+            "undershoot_w": 130.0,
+            "outside_band_percent": 14.583333333333334,
+            "steady_p95_error_w": 19.049999999999272,
+            "steady_rmse_w": 9.787463636941107,
+            "steady_variation_w_per_s": 7.0227272727272725,
+            "unsettled_steps": 0,
+            "worst_settling_s": 7.0,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 7.0,
+                "overshoot_w": 18.0,
+                "undershoot_w": 113.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 5.0,
+                "overshoot_w": 91.0,
+                "undershoot_w": 20.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 3.0,
+                "overshoot_w": 14.0,
+                "undershoot_w": 30.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": false,
+      "relative_passed": false,
+      "failures": [
+        "p95_error_w: 67.08412631390539 exceeds absolute budget 60.0",
+        "p95_error_w: regression 27.518 exceeds allowance 5.000",
+        "delivered sensor: p95_error_w: 89.0 exceeds absolute budget 60.0",
+        "delivered sensor: p95_error_w: regression 18.000 exceeds allowance 7.100"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 9.338553647145693,
+          "candidate": 10.51952490079744,
+          "delta": 1.180971253651748,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "p95_error_w": {
+          "baseline": 39.56577860007866,
+          "candidate": 67.08412631390539,
+          "delta": 27.518347713826728,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 4.286276068159686,
+          "candidate": 4.778545356878953,
+          "delta": 0.49226928871926745,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 0.9219065623445052,
+          "candidate": 0.7567989752408475,
+          "delta": -0.1651075871036577,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        },
+        "worst_settling_s": {
+          "baseline": 5.459999999999994,
+          "candidate": 5.420000000000002,
+          "delta": -0.03999999999999204,
+          "allowance": 2.0,
+          "direction": "better"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": false,
+        "failures": [
+          "p95_error_w: 89.0 exceeds absolute budget 60.0",
+          "p95_error_w: regression 18.000 exceeds allowance 7.100"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 13.975,
+            "candidate": 15.754166666666666,
+            "delta": 1.7791666666666668,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "p95_error_w": {
+            "baseline": 71.0,
+            "candidate": 89.0,
+            "delta": 18.0,
+            "allowance": 7.1000000000000005,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 9.09731340073052,
+            "candidate": 9.787463636941107,
+            "delta": 0.6901502362105862,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 7.096590909090909,
+            "candidate": 7.0227272727272725,
+            "delta": -0.07386363636363669,
+            "allowance": 1.0644886363636363,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          },
+          "worst_settling_s": {
+            "baseline": 8.0,
+            "candidate": 7.0,
+            "delta": -1.0,
+            "allowance": 2.0,
+            "direction": "better"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ramp",
+      "seed": 7,
+      "scores": {
+        "baseline": {
+          "mae_w": 13.348699319091873,
+          "p95_error_w": 24.29481264950539,
+          "overshoot_w": 26.31818586785394,
+          "undershoot_w": 88.52745110980021,
+          "outside_band_percent": 13.65833333333328,
+          "steady_p95_error_w": 9.577301515229266,
+          "steady_rmse_w": 5.544999177391303,
+          "steady_variation_w_per_s": 1.0552953829255056,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 16.80716666666666,
+            "p95_error_w": 36.0,
+            "overshoot_w": 41.0,
+            "undershoot_w": 89.0,
+            "outside_band_percent": 33.416666666666636,
+            "steady_p95_error_w": 18.049999999999727,
+            "steady_rmse_w": 9.379943141263348,
+            "steady_variation_w_per_s": 8.517241379310345,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 9.22082391302461,
+          "p95_error_w": 18.783545328173346,
+          "overshoot_w": 20.849281074633808,
+          "undershoot_w": 88.52745110980021,
+          "outside_band_percent": 3.149999999999993,
+          "steady_p95_error_w": 7.9035019308489876,
+          "steady_rmse_w": 4.573258726791171,
+          "steady_variation_w_per_s": 0.8923054784067134,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 12.87183333333333,
+            "p95_error_w": 31.0,
+            "overshoot_w": 33.0,
+            "undershoot_w": 89.0,
+            "outside_band_percent": 18.749999999999982,
+            "steady_p95_error_w": 21.0,
+            "steady_rmse_w": 10.068101443006356,
+            "steady_variation_w_per_s": 8.327586206896552,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": true,
+      "absolute_passed": true,
+      "relative_passed": true,
+      "failures": [],
+      "changes": {
+        "mae_w": {
+          "baseline": 13.348699319091873,
+          "candidate": 9.22082391302461,
+          "delta": -4.127875406067263,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "p95_error_w": {
+          "baseline": 24.29481264950539,
+          "candidate": 18.783545328173346,
+          "delta": -5.511267321332042,
+          "allowance": 5.0,
+          "direction": "better"
+        },
+        "steady_rmse_w": {
+          "baseline": 5.544999177391303,
+          "candidate": 4.573258726791171,
+          "delta": -0.9717404506001319,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 1.0552953829255056,
+          "candidate": 0.8923054784067134,
+          "delta": -0.16298990451879225,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": true,
+        "absolute_passed": true,
+        "relative_passed": true,
+        "failures": [],
+        "changes": {
+          "mae_w": {
+            "baseline": 16.80716666666666,
+            "candidate": 12.87183333333333,
+            "delta": -3.9353333333333307,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "p95_error_w": {
+            "baseline": 36.0,
+            "candidate": 31.0,
+            "delta": -5.0,
+            "allowance": 5.0,
+            "direction": "better"
+          },
+          "steady_rmse_w": {
+            "baseline": 9.379943141263348,
+            "candidate": 10.068101443006356,
+            "delta": 0.6881583017430071,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 8.517241379310345,
+            "candidate": 8.327586206896552,
+            "delta": -0.1896551724137936,
+            "allowance": 1.2775862068965518,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ramp",
+      "seed": 27,
+      "scores": {
+        "baseline": {
+          "mae_w": 12.264207973061508,
+          "p95_error_w": 22.233005102017103,
+          "overshoot_w": 25.111231924114264,
+          "undershoot_w": 88.52745110980021,
+          "outside_band_percent": 12.949999999999953,
+          "steady_p95_error_w": 8.494257046284567,
+          "steady_rmse_w": 4.7229343434415,
+          "steady_variation_w_per_s": 1.0230697331199285,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 16.669333333333327,
+            "p95_error_w": 37.0,
+            "overshoot_w": 49.0,
+            "undershoot_w": 92.0,
+            "outside_band_percent": 27.933333333333312,
+            "steady_p95_error_w": 18.049999999999727,
+            "steady_rmse_w": 9.226772639083144,
+            "steady_variation_w_per_s": 5.9655172413793105,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 9.19637771068428,
+          "p95_error_w": 22.916408137413725,
+          "overshoot_w": 41.031998866224995,
+          "undershoot_w": 88.52745110980021,
+          "outside_band_percent": 5.366666666666666,
+          "steady_p95_error_w": 6.820268991262629,
+          "steady_rmse_w": 4.157731783782247,
+          "steady_variation_w_per_s": 0.9270359071813161,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 14.260999999999996,
+            "p95_error_w": 43.0,
+            "overshoot_w": 46.0,
+            "undershoot_w": 92.0,
+            "outside_band_percent": 21.76666666666665,
+            "steady_p95_error_w": 24.14999999999918,
+            "steady_rmse_w": 11.30044246921332,
+            "steady_variation_w_per_s": 6.206896551724138,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": true,
+      "relative_passed": true,
+      "failures": [
+        "delivered sensor: p95_error_w: regression 6.000 exceeds allowance 5.000",
+        "delivered sensor: steady_rmse_w: regression 2.074 exceeds allowance 2.000"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 12.264207973061508,
+          "candidate": 9.19637771068428,
+          "delta": -3.0678302623772282,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "p95_error_w": {
+          "baseline": 22.233005102017103,
+          "candidate": 22.916408137413725,
+          "delta": 0.6834030353966227,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 4.7229343434415,
+          "candidate": 4.157731783782247,
+          "delta": -0.5652025596592525,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 1.0230697331199285,
+          "candidate": 0.9270359071813161,
+          "delta": -0.09603382593861243,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": true,
+        "relative_passed": false,
+        "failures": [
+          "p95_error_w: regression 6.000 exceeds allowance 5.000",
+          "steady_rmse_w: regression 2.074 exceeds allowance 2.000"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 16.669333333333327,
+            "candidate": 14.260999999999996,
+            "delta": -2.4083333333333314,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "p95_error_w": {
+            "baseline": 37.0,
+            "candidate": 43.0,
+            "delta": 6.0,
+            "allowance": 5.0,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 9.226772639083144,
+            "candidate": 11.30044246921332,
+            "delta": 2.073669830130175,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 5.9655172413793105,
+            "candidate": 6.206896551724138,
+            "delta": 0.2413793103448274,
+            "allowance": 1.0,
+            "direction": "worse"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ramp",
+      "seed": 91,
+      "scores": {
+        "baseline": {
+          "mae_w": 13.17903818889149,
+          "p95_error_w": 25.526142522318338,
+          "overshoot_w": 27.985212790481796,
+          "undershoot_w": 88.52745110980021,
+          "outside_band_percent": 19.824999999999992,
+          "steady_p95_error_w": 8.712321947352425,
+          "steady_rmse_w": 4.62088859286466,
+          "steady_variation_w_per_s": 0.9724327687578568,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 16.76133333333333,
+            "p95_error_w": 34.0,
+            "overshoot_w": 39.0,
+            "undershoot_w": 95.0,
+            "outside_band_percent": 31.84166666666665,
+            "steady_p95_error_w": 18.049999999999727,
+            "steady_rmse_w": 9.62029105588807,
+            "steady_variation_w_per_s": 6.896551724137931,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 10.61488512910535,
+          "p95_error_w": 37.632720704834554,
+          "overshoot_w": 61.466081585291505,
+          "undershoot_w": 88.52745110980021,
+          "outside_band_percent": 7.466666666666657,
+          "steady_p95_error_w": 15.253726942533179,
+          "steady_rmse_w": 7.0587792020395765,
+          "steady_variation_w_per_s": 0.9770725828444559,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 15.006999999999998,
+            "p95_error_w": 37.0,
+            "overshoot_w": 65.0,
+            "undershoot_w": 102.0,
+            "outside_band_percent": 17.82499999999997,
+            "steady_p95_error_w": 23.049999999999727,
+            "steady_rmse_w": 12.353137253345807,
+            "steady_variation_w_per_s": 6.879310344827586,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": true,
+      "relative_passed": false,
+      "failures": [
+        "p95_error_w: regression 12.107 exceeds allowance 5.000",
+        "steady_rmse_w: regression 2.438 exceeds allowance 2.000",
+        "delivered sensor: steady_rmse_w: regression 2.733 exceeds allowance 2.000"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 13.17903818889149,
+          "candidate": 10.61488512910535,
+          "delta": -2.5641530597861397,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "p95_error_w": {
+          "baseline": 25.526142522318338,
+          "candidate": 37.632720704834554,
+          "delta": 12.106578182516216,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 4.62088859286466,
+          "candidate": 7.0587792020395765,
+          "delta": 2.437890609174916,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 0.9724327687578568,
+          "candidate": 0.9770725828444559,
+          "delta": 0.004639814086599081,
+          "allowance": 1.0,
+          "direction": "worse"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": true,
+        "relative_passed": false,
+        "failures": [
+          "steady_rmse_w: regression 2.733 exceeds allowance 2.000"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 16.76133333333333,
+            "candidate": 15.006999999999998,
+            "delta": -1.7543333333333315,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "p95_error_w": {
+            "baseline": 34.0,
+            "candidate": 37.0,
+            "delta": 3.0,
+            "allowance": 5.0,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 9.62029105588807,
+            "candidate": 12.353137253345807,
+            "delta": 2.7328461974577376,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 6.896551724137931,
+            "candidate": 6.879310344827586,
+            "delta": -0.017241379310344307,
+            "allowance": 1.0344827586206895,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "cadence_shift",
+      "seed": 7,
+      "scores": {
+        "baseline": {
+          "mae_w": 16.663315102269504,
+          "p95_error_w": 47.72318113640475,
+          "overshoot_w": 47.724756293713824,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 25.81666666666667,
+          "steady_p95_error_w": 33.50465014543517,
+          "steady_rmse_w": 12.181883714606021,
+          "steady_variation_w_per_s": 1.3533450374495584,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 18.825,
+            "p95_error_w": 61.0,
+            "overshoot_w": 61.0,
+            "undershoot_w": 165.0,
+            "outside_band_percent": 25.0,
+            "steady_p95_error_w": 36.0,
+            "steady_rmse_w": 15.600035612494963,
+            "steady_variation_w_per_s": 7.732954545454546,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 16.127825669390614,
+          "p95_error_w": 50.83321633120113,
+          "overshoot_w": 51.20932292272238,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 25.13333333333334,
+          "steady_p95_error_w": 31.8006629041653,
+          "steady_rmse_w": 11.033682166091493,
+          "steady_variation_w_per_s": 1.2117782453525359,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 18.741666666666667,
+            "p95_error_w": 57.0,
+            "overshoot_w": 57.0,
+            "undershoot_w": 165.0,
+            "outside_band_percent": 25.416666666666668,
+            "steady_p95_error_w": 32.24999999999636,
+            "steady_rmse_w": 15.364461157706334,
+            "steady_variation_w_per_s": 7.744318181818182,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": true,
+      "absolute_passed": true,
+      "relative_passed": true,
+      "failures": [],
+      "changes": {
+        "mae_w": {
+          "baseline": 16.663315102269504,
+          "candidate": 16.127825669390614,
+          "delta": -0.5354894328788902,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "p95_error_w": {
+          "baseline": 47.72318113640475,
+          "candidate": 50.83321633120113,
+          "delta": 3.1100351947963816,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 12.181883714606021,
+          "candidate": 11.033682166091493,
+          "delta": -1.1482015485145283,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 1.3533450374495584,
+          "candidate": 1.2117782453525359,
+          "delta": -0.1415667920970225,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": true,
+        "absolute_passed": true,
+        "relative_passed": true,
+        "failures": [],
+        "changes": {
+          "mae_w": {
+            "baseline": 18.825,
+            "candidate": 18.741666666666667,
+            "delta": -0.08333333333333215,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "p95_error_w": {
+            "baseline": 61.0,
+            "candidate": 57.0,
+            "delta": -4.0,
+            "allowance": 6.1000000000000005,
+            "direction": "better"
+          },
+          "steady_rmse_w": {
+            "baseline": 15.600035612494963,
+            "candidate": 15.364461157706334,
+            "delta": -0.2355744547886296,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 7.732954545454546,
+            "candidate": 7.744318181818182,
+            "delta": 0.011363636363635798,
+            "allowance": 1.1599431818181818,
+            "direction": "worse"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "cadence_shift",
+      "seed": 27,
+      "scores": {
+        "baseline": {
+          "mae_w": 15.04750263192916,
+          "p95_error_w": 45.039532676753566,
+          "overshoot_w": 48.74573388707714,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 25.208333333333332,
+          "steady_p95_error_w": 30.57262782296358,
+          "steady_rmse_w": 11.737772017391581,
+          "steady_variation_w_per_s": 1.29150677509413,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 18.191666666666666,
+            "p95_error_w": 49.0,
+            "overshoot_w": 50.0,
+            "undershoot_w": 169.0,
+            "outside_band_percent": 26.666666666666668,
+            "steady_p95_error_w": 38.19999999999709,
+            "steady_rmse_w": 15.845433972529051,
+            "steady_variation_w_per_s": 7.1647727272727275,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 15.368155623113523,
+          "p95_error_w": 49.320540988040676,
+          "overshoot_w": 51.40048229321678,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 24.908333333333324,
+          "steady_p95_error_w": 27.830068922524855,
+          "steady_rmse_w": 10.499161791891744,
+          "steady_variation_w_per_s": 1.205356315633675,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 19.504166666666666,
+            "p95_error_w": 52.0,
+            "overshoot_w": 57.0,
+            "undershoot_w": 169.0,
+            "outside_band_percent": 28.333333333333332,
+            "steady_p95_error_w": 39.04999999999927,
+            "steady_rmse_w": 15.718531172543516,
+            "steady_variation_w_per_s": 7.3522727272727275,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": true,
+      "absolute_passed": true,
+      "relative_passed": true,
+      "failures": [],
+      "changes": {
+        "mae_w": {
+          "baseline": 15.04750263192916,
+          "candidate": 15.368155623113523,
+          "delta": 0.32065299118436386,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "p95_error_w": {
+          "baseline": 45.039532676753566,
+          "candidate": 49.320540988040676,
+          "delta": 4.28100831128711,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 11.737772017391581,
+          "candidate": 10.499161791891744,
+          "delta": -1.238610225499837,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 1.29150677509413,
+          "candidate": 1.205356315633675,
+          "delta": -0.08615045946045496,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": true,
+        "absolute_passed": true,
+        "relative_passed": true,
+        "failures": [],
+        "changes": {
+          "mae_w": {
+            "baseline": 18.191666666666666,
+            "candidate": 19.504166666666666,
+            "delta": 1.3125,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "p95_error_w": {
+            "baseline": 49.0,
+            "candidate": 52.0,
+            "delta": 3.0,
+            "allowance": 5.0,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 15.845433972529051,
+            "candidate": 15.718531172543516,
+            "delta": -0.126902799985535,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 7.1647727272727275,
+            "candidate": 7.3522727272727275,
+            "delta": 0.1875,
+            "allowance": 1.074715909090909,
+            "direction": "worse"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "cadence_shift",
+      "seed": 91,
+      "scores": {
+        "baseline": {
+          "mae_w": 13.862694802453385,
+          "p95_error_w": 44.895269409134784,
+          "overshoot_w": 46.015740502149754,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 25.70833333333332,
+          "steady_p95_error_w": 33.228785329983246,
+          "steady_rmse_w": 12.040026296599253,
+          "steady_variation_w_per_s": 1.3256306472516057,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 18.395833333333332,
+            "p95_error_w": 50.0,
+            "overshoot_w": 50.0,
+            "undershoot_w": 172.0,
+            "outside_band_percent": 29.583333333333332,
+            "steady_p95_error_w": 39.0,
+            "steady_rmse_w": 16.879474715365603,
+            "steady_variation_w_per_s": 7.017045454545454,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 16.319913563322064,
+          "p95_error_w": 52.476466440626865,
+          "overshoot_w": 71.61773608365496,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 27.649999999999988,
+          "steady_p95_error_w": 29.63630369219303,
+          "steady_rmse_w": 11.30459628192037,
+          "steady_variation_w_per_s": 1.2545246995713735,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 19.854166666666668,
+            "p95_error_w": 55.0,
+            "overshoot_w": 70.0,
+            "undershoot_w": 172.0,
+            "outside_band_percent": 30.416666666666668,
+            "steady_p95_error_w": 37.04999999999927,
+            "steady_rmse_w": 16.246025154890454,
+            "steady_variation_w_per_s": 7.090909090909091,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": true,
+      "relative_passed": false,
+      "failures": [
+        "mae_w: regression 2.457 exceeds allowance 2.000",
+        "p95_error_w: regression 7.581 exceeds allowance 5.000"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 13.862694802453385,
+          "candidate": 16.319913563322064,
+          "delta": 2.4572187608686793,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "p95_error_w": {
+          "baseline": 44.895269409134784,
+          "candidate": 52.476466440626865,
+          "delta": 7.581197031492081,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 12.040026296599253,
+          "candidate": 11.30459628192037,
+          "delta": -0.735430014678883,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 1.3256306472516057,
+          "candidate": 1.2545246995713735,
+          "delta": -0.07110594768023226,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": true,
+        "absolute_passed": true,
+        "relative_passed": true,
+        "failures": [],
+        "changes": {
+          "mae_w": {
+            "baseline": 18.395833333333332,
+            "candidate": 19.854166666666668,
+            "delta": 1.4583333333333357,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "p95_error_w": {
+            "baseline": 50.0,
+            "candidate": 55.0,
+            "delta": 5.0,
+            "allowance": 5.0,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 16.879474715365603,
+            "candidate": 16.246025154890454,
+            "delta": -0.6334495604751496,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 7.017045454545454,
+            "candidate": 7.090909090909091,
+            "delta": 0.07386363636363669,
+            "allowance": 1.0525568181818181,
+            "direction": "worse"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "slow_power",
+      "seed": 7,
+      "scores": {
+        "baseline": {
+          "mae_w": 14.147108502038982,
+          "p95_error_w": 79.75440535291801,
+          "overshoot_w": 83.81383059398217,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 15.841666666666656,
+          "steady_p95_error_w": 10.632680495169044,
+          "steady_rmse_w": 6.7314674558548955,
+          "steady_variation_w_per_s": 0.7250049579967759,
+          "unsettled_steps": 0,
+          "worst_settling_s": 9.239999999999995,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 9.239999999999995,
+              "overshoot_w": 3.5147814868245746,
+              "undershoot_w": 106.08436338173013
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 8.699999999999989,
+              "overshoot_w": 83.81383059398217,
+              "undershoot_w": 3.784375739967544
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 1.039999999999992,
+              "overshoot_w": 0.9885051108258551,
+              "undershoot_w": 21.365812216370472
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 19.22891666666667,
+            "p95_error_w": 87.0,
+            "overshoot_w": 100.0,
+            "undershoot_w": 119.0,
+            "outside_band_percent": 22.216666666666672,
+            "steady_p95_error_w": 27.0,
+            "steady_rmse_w": 11.763507602374009,
+            "steady_variation_w_per_s": 4.420454545454546,
+            "unsettled_steps": 0,
+            "worst_settling_s": 12.400000000000006,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 12.400000000000006,
+                "overshoot_w": 15.0,
+                "undershoot_w": 115.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 12.400000000000006,
+                "overshoot_w": 100.0,
+                "undershoot_w": 18.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 0.28000000000000114,
+                "overshoot_w": 16.0,
+                "undershoot_w": 27.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 12.505491918025252,
+          "p95_error_w": 72.87125857774527,
+          "overshoot_w": 83.97711137640658,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 14.18333333333333,
+          "steady_p95_error_w": 9.619622894569071,
+          "steady_rmse_w": 5.755021113575698,
+          "steady_variation_w_per_s": 0.5158049744930966,
+          "unsettled_steps": 0,
+          "worst_settling_s": 11.219999999999999,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 11.219999999999999,
+              "overshoot_w": 0.9858181974938134,
+              "undershoot_w": 107.15265113272326
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 3.760000000000005,
+              "overshoot_w": 83.97711137640658,
+              "undershoot_w": 1.9332411850467395
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 1.9799999999999898,
+              "overshoot_w": 0.0,
+              "undershoot_w": 22.038146604863982
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 17.733083333333333,
+            "p95_error_w": 95.0,
+            "overshoot_w": 99.0,
+            "undershoot_w": 119.0,
+            "outside_band_percent": 18.925000000000004,
+            "steady_p95_error_w": 27.0,
+            "steady_rmse_w": 10.484326926947247,
+            "steady_variation_w_per_s": 4.244318181818182,
+            "unsettled_steps": 0,
+            "worst_settling_s": 12.400000000000006,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 12.400000000000006,
+                "overshoot_w": 14.0,
+                "undershoot_w": 116.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 6.459999999999994,
+                "overshoot_w": 99.0,
+                "undershoot_w": 20.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 0.28000000000000114,
+                "overshoot_w": 16.0,
+                "undershoot_w": 26.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 2,
+        "latency_s": 0.35,
+        "jitter_s": 0.1,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": false,
+      "relative_passed": true,
+      "failures": [
+        "p95_error_w: 72.87125857774527 exceeds absolute budget 60.0",
+        "delivered sensor: p95_error_w: 95.0 exceeds absolute budget 60.0"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 14.147108502038982,
+          "candidate": 12.505491918025252,
+          "delta": -1.6416165840137307,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "p95_error_w": {
+          "baseline": 79.75440535291801,
+          "candidate": 72.87125857774527,
+          "delta": -6.883146775172747,
+          "allowance": 7.975440535291802,
+          "direction": "better"
+        },
+        "steady_rmse_w": {
+          "baseline": 6.7314674558548955,
+          "candidate": 5.755021113575698,
+          "delta": -0.9764463422791971,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 0.7250049579967759,
+          "candidate": 0.5158049744930966,
+          "delta": -0.2091999835036793,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        },
+        "worst_settling_s": {
+          "baseline": 9.239999999999995,
+          "candidate": 11.219999999999999,
+          "delta": 1.980000000000004,
+          "allowance": 2.0,
+          "direction": "worse"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": true,
+        "failures": [
+          "p95_error_w: 95.0 exceeds absolute budget 60.0"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 19.22891666666667,
+            "candidate": 17.733083333333333,
+            "delta": -1.4958333333333371,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "p95_error_w": {
+            "baseline": 87.0,
+            "candidate": 95.0,
+            "delta": 8.0,
+            "allowance": 8.700000000000001,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 11.763507602374009,
+            "candidate": 10.484326926947247,
+            "delta": -1.2791806754267618,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 4.420454545454546,
+            "candidate": 4.244318181818182,
+            "delta": -0.1761363636363642,
+            "allowance": 1.0,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          },
+          "worst_settling_s": {
+            "baseline": 12.400000000000006,
+            "candidate": 12.400000000000006,
+            "delta": 0.0,
+            "allowance": 2.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "slow_power",
+      "seed": 27,
+      "scores": {
+        "baseline": {
+          "mae_w": 13.023184488737032,
+          "p95_error_w": 65.69376881226836,
+          "overshoot_w": 84.09930173191623,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 17.125000000000007,
+          "steady_p95_error_w": 15.325976782587409,
+          "steady_rmse_w": 6.46677979050128,
+          "steady_variation_w_per_s": 0.7357333772226012,
+          "unsettled_steps": 0,
+          "worst_settling_s": 14.740000000000009,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 9.840000000000003,
+              "overshoot_w": 0.048790901908944306,
+              "undershoot_w": 102.51440830602724
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 14.740000000000009,
+              "overshoot_w": 84.09930173191623,
+              "undershoot_w": 4.458836819195227
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 1.1800000000000068,
+              "overshoot_w": 2.9861400597641534,
+              "undershoot_w": 22.749256518805566
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 18.338583333333336,
+            "p95_error_w": 76.0,
+            "overshoot_w": 76.0,
+            "undershoot_w": 119.0,
+            "outside_band_percent": 23.83333333333333,
+            "steady_p95_error_w": 24.0,
+            "steady_rmse_w": 11.76635976936887,
+            "steady_variation_w_per_s": 4.6647727272727275,
+            "unsettled_steps": 0,
+            "worst_settling_s": 20.319999999999993,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 10.319999999999993,
+                "overshoot_w": 16.0,
+                "undershoot_w": 115.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 20.319999999999993,
+                "overshoot_w": 76.0,
+                "undershoot_w": 10.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 4.259999999999991,
+                "overshoot_w": 14.0,
+                "undershoot_w": 36.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 11.640049469379848,
+          "p95_error_w": 66.62474638373239,
+          "overshoot_w": 81.5904892676975,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 12.375,
+          "steady_p95_error_w": 12.799022987854372,
+          "steady_rmse_w": 5.950389657819654,
+          "steady_variation_w_per_s": 0.5049650869489983,
+          "unsettled_steps": 0,
+          "worst_settling_s": 13.400000000000006,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 13.400000000000006,
+              "overshoot_w": 0.0,
+              "undershoot_w": 103.22084067623578
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 3.019999999999996,
+              "overshoot_w": 81.5904892676975,
+              "undershoot_w": 3.7626062469719557
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 1.1599999999999966,
+              "overshoot_w": 2.1950576359254796,
+              "undershoot_w": 22.94652248273829
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 17.22775,
+            "p95_error_w": 81.0,
+            "overshoot_w": 74.0,
+            "undershoot_w": 121.0,
+            "outside_band_percent": 20.54166666666667,
+            "steady_p95_error_w": 22.0,
+            "steady_rmse_w": 10.747087460744373,
+            "steady_variation_w_per_s": 4.5397727272727275,
+            "unsettled_steps": 0,
+            "worst_settling_s": 14.400000000000006,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 14.400000000000006,
+                "overshoot_w": 12.0,
+                "undershoot_w": 115.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 4.3799999999999955,
+                "overshoot_w": 74.0,
+                "undershoot_w": 11.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 4.259999999999991,
+                "overshoot_w": 15.0,
+                "undershoot_w": 37.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 2,
+        "latency_s": 0.35,
+        "jitter_s": 0.1,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": false,
+      "relative_passed": true,
+      "failures": [
+        "p95_error_w: 66.62474638373239 exceeds absolute budget 60.0",
+        "delivered sensor: p95_error_w: 81.0 exceeds absolute budget 60.0"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 13.023184488737032,
+          "candidate": 11.640049469379848,
+          "delta": -1.3831350193571836,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "p95_error_w": {
+          "baseline": 65.69376881226836,
+          "candidate": 66.62474638373239,
+          "delta": 0.9309775714640267,
+          "allowance": 6.5693768812268365,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 6.46677979050128,
+          "candidate": 5.950389657819654,
+          "delta": -0.516390132681626,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 0.7357333772226012,
+          "candidate": 0.5049650869489983,
+          "delta": -0.2307682902736029,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        },
+        "worst_settling_s": {
+          "baseline": 14.740000000000009,
+          "candidate": 13.400000000000006,
+          "delta": -1.3400000000000034,
+          "allowance": 2.211000000000001,
+          "direction": "better"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": true,
+        "failures": [
+          "p95_error_w: 81.0 exceeds absolute budget 60.0"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 18.338583333333336,
+            "candidate": 17.22775,
+            "delta": -1.1108333333333356,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "p95_error_w": {
+            "baseline": 76.0,
+            "candidate": 81.0,
+            "delta": 5.0,
+            "allowance": 7.6000000000000005,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 11.76635976936887,
+            "candidate": 10.747087460744373,
+            "delta": -1.0192723086244975,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 4.6647727272727275,
+            "candidate": 4.5397727272727275,
+            "delta": -0.125,
+            "allowance": 1.0,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          },
+          "worst_settling_s": {
+            "baseline": 20.319999999999993,
+            "candidate": 14.400000000000006,
+            "delta": -5.9199999999999875,
+            "allowance": 3.0479999999999987,
+            "direction": "better"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "slow_power",
+      "seed": 91,
+      "scores": {
+        "baseline": {
+          "mae_w": 12.348256423700517,
+          "p95_error_w": 61.104580265574924,
+          "overshoot_w": 87.57436784181581,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 17.741666666666667,
+          "steady_p95_error_w": 18.422249462070866,
+          "steady_rmse_w": 7.305456899929314,
+          "steady_variation_w_per_s": 0.7151115898106302,
+          "unsettled_steps": 0,
+          "worst_settling_s": 12.719999999999999,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 9.420000000000002,
+              "overshoot_w": 4.354965000958373,
+              "undershoot_w": 94.95003088658385
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 12.719999999999999,
+              "overshoot_w": 87.57436784181581,
+              "undershoot_w": 0.0
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 0.0,
+              "overshoot_w": 2.560861020843845,
+              "undershoot_w": 18.44069068855009
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 18.175916666666662,
+            "p95_error_w": 93.0,
+            "overshoot_w": 95.0,
+            "undershoot_w": 119.0,
+            "outside_band_percent": 23.76666666666667,
+            "steady_p95_error_w": 24.0,
+            "steady_rmse_w": 11.523950904288183,
+            "steady_variation_w_per_s": 4.698863636363637,
+            "unsettled_steps": 0,
+            "worst_settling_s": 18.400000000000006,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 10.36,
+                "overshoot_w": 27.0,
+                "undershoot_w": 98.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 18.400000000000006,
+                "overshoot_w": 95.0,
+                "undershoot_w": 11.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 10.340000000000003,
+                "overshoot_w": 16.0,
+                "undershoot_w": 34.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 12.15238717940166,
+          "p95_error_w": 71.59635308691185,
+          "overshoot_w": 86.00597958107087,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 14.98333333333333,
+          "steady_p95_error_w": 15.334569943655437,
+          "steady_rmse_w": 6.496161522232588,
+          "steady_variation_w_per_s": 0.5489262581202025,
+          "unsettled_steps": 0,
+          "worst_settling_s": 13.239999999999995,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 13.239999999999995,
+              "overshoot_w": 2.1450112142741204,
+              "undershoot_w": 95.70098102510912
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 4.519999999999996,
+              "overshoot_w": 86.00597958107087,
+              "undershoot_w": 0.0
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 0.0,
+              "overshoot_w": 2.4689031520406672,
+              "undershoot_w": 19.326400920658102
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 17.880166666666664,
+            "p95_error_w": 93.0,
+            "overshoot_w": 93.0,
+            "undershoot_w": 126.0,
+            "outside_band_percent": 18.733333333333338,
+            "steady_p95_error_w": 24.0,
+            "steady_rmse_w": 10.776986798008265,
+            "steady_variation_w_per_s": 4.5625,
+            "unsettled_steps": 0,
+            "worst_settling_s": 14.280000000000001,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 14.280000000000001,
+                "overshoot_w": 24.0,
+                "undershoot_w": 99.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 6.299999999999997,
+                "overshoot_w": 93.0,
+                "undershoot_w": 12.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 10.340000000000003,
+                "overshoot_w": 15.0,
+                "undershoot_w": 33.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 2,
+        "latency_s": 0.35,
+        "jitter_s": 0.1,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 0.25,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": false,
+      "relative_passed": false,
+      "failures": [
+        "p95_error_w: 71.59635308691185 exceeds absolute budget 60.0",
+        "p95_error_w: regression 10.492 exceeds allowance 6.110",
+        "delivered sensor: p95_error_w: 93.0 exceeds absolute budget 60.0"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 12.348256423700517,
+          "candidate": 12.15238717940166,
+          "delta": -0.19586924429885677,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "p95_error_w": {
+          "baseline": 61.104580265574924,
+          "candidate": 71.59635308691185,
+          "delta": 10.491772821336923,
+          "allowance": 6.110458026557493,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 7.305456899929314,
+          "candidate": 6.496161522232588,
+          "delta": -0.809295377696726,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 0.7151115898106302,
+          "candidate": 0.5489262581202025,
+          "delta": -0.1661853316904277,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        },
+        "worst_settling_s": {
+          "baseline": 12.719999999999999,
+          "candidate": 13.239999999999995,
+          "delta": 0.519999999999996,
+          "allowance": 2.0,
+          "direction": "worse"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": true,
+        "failures": [
+          "p95_error_w: 93.0 exceeds absolute budget 60.0"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 18.175916666666662,
+            "candidate": 17.880166666666664,
+            "delta": -0.2957499999999982,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "p95_error_w": {
+            "baseline": 93.0,
+            "candidate": 93.0,
+            "delta": 0.0,
+            "allowance": 9.3,
+            "direction": "same"
+          },
+          "steady_rmse_w": {
+            "baseline": 11.523950904288183,
+            "candidate": 10.776986798008265,
+            "delta": -0.7469641062799184,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 4.698863636363637,
+            "candidate": 4.5625,
+            "delta": -0.1363636363636367,
+            "allowance": 1.0,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          },
+          "worst_settling_s": {
+            "baseline": 18.400000000000006,
+            "candidate": 14.280000000000001,
+            "delta": -4.1200000000000045,
+            "allowance": 2.7600000000000007,
+            "direction": "better"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "fast_power_slow_cadence",
+      "seed": 7,
+      "scores": {
+        "baseline": {
+          "mae_w": 18.2666750739661,
+          "p95_error_w": 51.59650791982659,
+          "overshoot_w": 93.61185674616996,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 24.199999999999985,
+          "steady_p95_error_w": 29.86471489878279,
+          "steady_rmse_w": 15.577137293428166,
+          "steady_variation_w_per_s": 7.384168212336861,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 19.812916666666663,
+            "p95_error_w": 60.0,
+            "overshoot_w": 99.0,
+            "undershoot_w": 167.0,
+            "outside_band_percent": 24.524999999999984,
+            "steady_p95_error_w": 32.0,
+            "steady_rmse_w": 16.680281106077853,
+            "steady_variation_w_per_s": 9.477272727272727,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 15.199186102408524,
+          "p95_error_w": 40.62371596070585,
+          "overshoot_w": 41.55800516792513,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 23.116666666666667,
+          "steady_p95_error_w": 31.24237713268142,
+          "steady_rmse_w": 10.518463371732707,
+          "steady_variation_w_per_s": 1.4587614554159614,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 18.513166666666667,
+            "p95_error_w": 48.0,
+            "overshoot_w": 52.0,
+            "undershoot_w": 167.0,
+            "outside_band_percent": 24.00000000000002,
+            "steady_p95_error_w": 25.0,
+            "steady_rmse_w": 12.486312506100427,
+            "steady_variation_w_per_s": 6.5,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 0.25,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 2,
+        "latency_s": 0.4,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": true,
+      "absolute_passed": true,
+      "relative_passed": true,
+      "failures": [],
+      "changes": {
+        "mae_w": {
+          "baseline": 18.2666750739661,
+          "candidate": 15.199186102408524,
+          "delta": -3.067488971557575,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "p95_error_w": {
+          "baseline": 51.59650791982659,
+          "candidate": 40.62371596070585,
+          "delta": -10.972791959120741,
+          "allowance": 5.15965079198266,
+          "direction": "better"
+        },
+        "steady_rmse_w": {
+          "baseline": 15.577137293428166,
+          "candidate": 10.518463371732707,
+          "delta": -5.058673921695458,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 7.384168212336861,
+          "candidate": 1.4587614554159614,
+          "delta": -5.9254067569209,
+          "allowance": 1.107625231850529,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": true,
+        "absolute_passed": true,
+        "relative_passed": true,
+        "failures": [],
+        "changes": {
+          "mae_w": {
+            "baseline": 19.812916666666663,
+            "candidate": 18.513166666666667,
+            "delta": -1.299749999999996,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "p95_error_w": {
+            "baseline": 60.0,
+            "candidate": 48.0,
+            "delta": -12.0,
+            "allowance": 6.0,
+            "direction": "better"
+          },
+          "steady_rmse_w": {
+            "baseline": 16.680281106077853,
+            "candidate": 12.486312506100427,
+            "delta": -4.193968599977426,
+            "allowance": 2.0,
+            "direction": "better"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 9.477272727272727,
+            "candidate": 6.5,
+            "delta": -2.9772727272727266,
+            "allowance": 1.421590909090909,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "fast_power_slow_cadence",
+      "seed": 27,
+      "scores": {
+        "baseline": {
+          "mae_w": 20.36560241018754,
+          "p95_error_w": 68.99462087677148,
+          "overshoot_w": 122.17234294115815,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 32.24166666666667,
+          "steady_p95_error_w": 39.239704862123396,
+          "steady_rmse_w": 19.175627839288893,
+          "steady_variation_w_per_s": 8.933534596446645,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 22.754583333333336,
+            "p95_error_w": 84.0,
+            "overshoot_w": 136.0,
+            "undershoot_w": 169.0,
+            "outside_band_percent": 35.866666666666724,
+            "steady_p95_error_w": 41.0,
+            "steady_rmse_w": 22.36449070389139,
+            "steady_variation_w_per_s": 12.335227272727273,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 17.476003796153275,
+          "p95_error_w": 53.307238827988385,
+          "overshoot_w": 88.52060586061327,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 24.541666666666675,
+          "steady_p95_error_w": 23.23978209610543,
+          "steady_rmse_w": 10.0955399554146,
+          "steady_variation_w_per_s": 1.6878642450510506,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 20.11558333333333,
+            "p95_error_w": 78.0,
+            "overshoot_w": 105.0,
+            "undershoot_w": 169.0,
+            "outside_band_percent": 26.883333333333304,
+            "steady_p95_error_w": 30.0,
+            "steady_rmse_w": 13.89251996979349,
+            "steady_variation_w_per_s": 7.556818181818182,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 0.25,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 2,
+        "latency_s": 0.4,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": true,
+      "relative_passed": true,
+      "failures": [
+        "delivered sensor: p95_error_w: 78.0 exceeds absolute budget 60.0"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 20.36560241018754,
+          "candidate": 17.476003796153275,
+          "delta": -2.8895986140342664,
+          "allowance": 2.0365602410187544,
+          "direction": "better"
+        },
+        "p95_error_w": {
+          "baseline": 68.99462087677148,
+          "candidate": 53.307238827988385,
+          "delta": -15.687382048783093,
+          "allowance": 6.899462087677148,
+          "direction": "better"
+        },
+        "steady_rmse_w": {
+          "baseline": 19.175627839288893,
+          "candidate": 10.0955399554146,
+          "delta": -9.080087883874294,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 8.933534596446645,
+          "candidate": 1.6878642450510506,
+          "delta": -7.245670351395594,
+          "allowance": 1.3400301894669966,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": true,
+        "failures": [
+          "p95_error_w: 78.0 exceeds absolute budget 60.0"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 22.754583333333336,
+            "candidate": 20.11558333333333,
+            "delta": -2.6390000000000065,
+            "allowance": 2.275458333333334,
+            "direction": "better"
+          },
+          "p95_error_w": {
+            "baseline": 84.0,
+            "candidate": 78.0,
+            "delta": -6.0,
+            "allowance": 8.4,
+            "direction": "better"
+          },
+          "steady_rmse_w": {
+            "baseline": 22.36449070389139,
+            "candidate": 13.89251996979349,
+            "delta": -8.471970734097901,
+            "allowance": 2.2364490703891393,
+            "direction": "better"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 12.335227272727273,
+            "candidate": 7.556818181818182,
+            "delta": -4.778409090909092,
+            "allowance": 1.850284090909091,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "fast_power_slow_cadence",
+      "seed": 91,
+      "scores": {
+        "baseline": {
+          "mae_w": 20.334481569999216,
+          "p95_error_w": 85.13262909231815,
+          "overshoot_w": 218.81451831312387,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 23.99166666666667,
+          "steady_p95_error_w": 29.5362191602309,
+          "steady_rmse_w": 17.43652275614608,
+          "steady_variation_w_per_s": 8.500303735017845,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 22.858416666666667,
+            "p95_error_w": 99.0,
+            "overshoot_w": 228.0,
+            "undershoot_w": 187.0,
+            "outside_band_percent": 27.324999999999992,
+            "steady_p95_error_w": 37.0,
+            "steady_rmse_w": 20.561168903218185,
+            "steady_variation_w_per_s": 12.0,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 17.627863952942842,
+          "p95_error_w": 63.47417143392528,
+          "overshoot_w": 139.64778083178533,
+          "undershoot_w": 165.19380154993473,
+          "outside_band_percent": 26.899999999999984,
+          "steady_p95_error_w": 24.373324711991582,
+          "steady_rmse_w": 10.255278627942108,
+          "steady_variation_w_per_s": 1.7241648156768037,
+          "unsettled_steps": 0,
+          "worst_settling_s": null,
+          "transitions": [],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 21.911833333333327,
+            "p95_error_w": 99.0,
+            "overshoot_w": 149.0,
+            "undershoot_w": 187.0,
+            "outside_band_percent": 30.450000000000003,
+            "steady_p95_error_w": 30.0,
+            "steady_rmse_w": 13.94634559859877,
+            "steady_variation_w_per_s": 7.715909090909091,
+            "unsettled_steps": 0,
+            "worst_settling_s": null,
+            "transitions": [],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 0.25,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence": {
+        "period_s": 2,
+        "latency_s": 0.4,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "passed": false,
+      "absolute_passed": false,
+      "relative_passed": true,
+      "failures": [
+        "p95_error_w: 63.47417143392528 exceeds absolute budget 60.0",
+        "delivered sensor: p95_error_w: 99.0 exceeds absolute budget 60.0"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 20.334481569999216,
+          "candidate": 17.627863952942842,
+          "delta": -2.7066176170563736,
+          "allowance": 2.033448156999922,
+          "direction": "better"
+        },
+        "p95_error_w": {
+          "baseline": 85.13262909231815,
+          "candidate": 63.47417143392528,
+          "delta": -21.658457658392877,
+          "allowance": 8.513262909231816,
+          "direction": "better"
+        },
+        "steady_rmse_w": {
+          "baseline": 17.43652275614608,
+          "candidate": 10.255278627942108,
+          "delta": -7.181244128203971,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 8.500303735017845,
+          "candidate": 1.7241648156768037,
+          "delta": -6.776138919341041,
+          "allowance": 1.2750455602526767,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": true,
+        "failures": [
+          "p95_error_w: 99.0 exceeds absolute budget 60.0"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 22.858416666666667,
+            "candidate": 21.911833333333327,
+            "delta": -0.94658333333334,
+            "allowance": 2.2858416666666668,
+            "direction": "better"
+          },
+          "p95_error_w": {
+            "baseline": 99.0,
+            "candidate": 99.0,
+            "delta": 0.0,
+            "allowance": 9.9,
+            "direction": "same"
+          },
+          "steady_rmse_w": {
+            "baseline": 20.561168903218185,
+            "candidate": 13.94634559859877,
+            "delta": -6.614823304619415,
+            "allowance": 2.0561168903218188,
+            "direction": "better"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 12.0,
+            "candidate": 7.715909090909091,
+            "delta": -4.284090909090909,
+            "allowance": 1.7999999999999998,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "sensor_outage",
+      "seed": 7,
+      "scores": {
+        "baseline": {
+          "mae_w": 8.54084491503869,
+          "p95_error_w": 38.22624519198479,
+          "overshoot_w": 78.32982368794859,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 6.808333333333335,
+          "steady_p95_error_w": 7.122077596233131,
+          "steady_rmse_w": 4.0326666132000835,
+          "steady_variation_w_per_s": 0.8847029971599348,
+          "unsettled_steps": 0,
+          "worst_settling_s": 5.680000000000007,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 5.439999999999998,
+              "overshoot_w": 7.955013565932688,
+              "undershoot_w": 103.79353168668436
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 5.680000000000007,
+              "overshoot_w": 78.32982368794859,
+              "undershoot_w": 5.045721676365645
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 0.0,
+              "overshoot_w": 5.117126536231041,
+              "undershoot_w": 19.172838422116826
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 13.372583333333333,
+            "p95_error_w": 68.0,
+            "overshoot_w": 86.0,
+            "undershoot_w": 119.0,
+            "outside_band_percent": 11.783333333333337,
+            "steady_p95_error_w": 18.0,
+            "steady_rmse_w": 8.931249757017333,
+            "steady_variation_w_per_s": 7.136363636363637,
+            "unsettled_steps": 0,
+            "worst_settling_s": 7.219999999999999,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 7.219999999999999,
+                "overshoot_w": 16.0,
+                "undershoot_w": 107.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 7.200000000000003,
+                "overshoot_w": 86.0,
+                "undershoot_w": 22.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 7.1200000000000045,
+                "overshoot_w": 14.0,
+                "undershoot_w": 22.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 9.766045102819062,
+          "p95_error_w": 45.575290651035715,
+          "overshoot_w": 80.06866376649796,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 9.808333333333335,
+          "steady_p95_error_w": 7.2308491086615705,
+          "steady_rmse_w": 3.947725151461041,
+          "steady_variation_w_per_s": 0.7023730846863026,
+          "unsettled_steps": 0,
+          "worst_settling_s": 6.040000000000006,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 6.040000000000006,
+              "overshoot_w": 14.247763678397689,
+              "undershoot_w": 101.70990406752304
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 3.9399999999999977,
+              "overshoot_w": 80.06866376649796,
+              "undershoot_w": 4.6448392999364785
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 0.0,
+              "overshoot_w": 4.877412081928526,
+              "undershoot_w": 19.740184119490635
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 14.77275,
+            "p95_error_w": 78.0,
+            "overshoot_w": 89.0,
+            "undershoot_w": 119.0,
+            "outside_band_percent": 15.208333333333343,
+            "steady_p95_error_w": 19.0,
+            "steady_rmse_w": 9.497689777578076,
+            "steady_variation_w_per_s": 7.221590909090909,
+            "unsettled_steps": 0,
+            "worst_settling_s": 7.219999999999999,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 7.219999999999999,
+                "overshoot_w": 18.0,
+                "undershoot_w": 105.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 6.1200000000000045,
+                "overshoot_w": 89.0,
+                "undershoot_w": 22.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 7.1200000000000045,
+                "overshoot_w": 16.0,
+                "undershoot_w": 22.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1,
+        "latency_s": 0.2,
+        "jitter_s": 0.1,
+        "phase_s": 0.0,
+        "dropouts": [
+          [
+            90,
+            98
+          ]
+        ]
+      },
+      "cadence": {
+        "period_s": 0.5,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": [
+          [
+            150,
+            158
+          ]
+        ]
+      },
+      "passed": false,
+      "absolute_passed": true,
+      "relative_passed": false,
+      "failures": [
+        "p95_error_w: regression 7.349 exceeds allowance 5.000",
+        "delivered sensor: p95_error_w: 78.0 exceeds absolute budget 60.0",
+        "delivered sensor: p95_error_w: regression 10.000 exceeds allowance 6.800"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 8.54084491503869,
+          "candidate": 9.766045102819062,
+          "delta": 1.2252001877803718,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "p95_error_w": {
+          "baseline": 38.22624519198479,
+          "candidate": 45.575290651035715,
+          "delta": 7.349045459050927,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 4.0326666132000835,
+          "candidate": 3.947725151461041,
+          "delta": -0.08494146173904227,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 0.8847029971599348,
+          "candidate": 0.7023730846863026,
+          "delta": -0.18232991247363228,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        },
+        "worst_settling_s": {
+          "baseline": 5.680000000000007,
+          "candidate": 6.040000000000006,
+          "delta": 0.35999999999999943,
+          "allowance": 2.0,
+          "direction": "worse"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": false,
+        "failures": [
+          "p95_error_w: 78.0 exceeds absolute budget 60.0",
+          "p95_error_w: regression 10.000 exceeds allowance 6.800"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 13.372583333333333,
+            "candidate": 14.77275,
+            "delta": 1.4001666666666672,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "p95_error_w": {
+            "baseline": 68.0,
+            "candidate": 78.0,
+            "delta": 10.0,
+            "allowance": 6.800000000000001,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 8.931249757017333,
+            "candidate": 9.497689777578076,
+            "delta": 0.5664400205607425,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 7.136363636363637,
+            "candidate": 7.221590909090909,
+            "delta": 0.08522727272727249,
+            "allowance": 1.0704545454545455,
+            "direction": "worse"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          },
+          "worst_settling_s": {
+            "baseline": 7.219999999999999,
+            "candidate": 7.219999999999999,
+            "delta": 0.0,
+            "allowance": 2.0,
+            "direction": "same"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "sensor_outage",
+      "seed": 27,
+      "scores": {
+        "baseline": {
+          "mae_w": 8.64541225401335,
+          "p95_error_w": 42.709617109017245,
+          "overshoot_w": 96.36399280613358,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 7.900000000000004,
+          "steady_p95_error_w": 8.200672423664939,
+          "steady_rmse_w": 4.049295932989924,
+          "steady_variation_w_per_s": 0.9185977295540325,
+          "unsettled_steps": 0,
+          "worst_settling_s": 4.540000000000006,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 4.299999999999997,
+              "overshoot_w": 6.358348628810177,
+              "undershoot_w": 109.16847360086766
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 4.540000000000006,
+              "overshoot_w": 96.36399280613358,
+              "undershoot_w": 6.8884704193481525
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 0.8400000000000034,
+              "overshoot_w": 2.6673497566618494,
+              "undershoot_w": 23.58755412628193
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 15.196166666666663,
+            "p95_error_w": 81.0,
+            "overshoot_w": 93.0,
+            "undershoot_w": 126.0,
+            "outside_band_percent": 14.524999999999995,
+            "steady_p95_error_w": 18.0,
+            "steady_rmse_w": 9.310931448810285,
+            "steady_variation_w_per_s": 6.704545454545454,
+            "unsettled_steps": 0,
+            "worst_settling_s": 7.159999999999997,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 7.140000000000001,
+                "overshoot_w": 18.0,
+                "undershoot_w": 126.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 7.159999999999997,
+                "overshoot_w": 93.0,
+                "undershoot_w": 17.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 2.1599999999999966,
+                "overshoot_w": 24.0,
+                "undershoot_w": 37.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 10.232697096183077,
+          "p95_error_w": 61.92839813411945,
+          "overshoot_w": 95.60400987611018,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 11.024999999999993,
+          "steady_p95_error_w": 8.756509528793547,
+          "steady_rmse_w": 4.1914163491117025,
+          "steady_variation_w_per_s": 0.714947640159292,
+          "unsettled_steps": 0,
+          "worst_settling_s": 11.319999999999993,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 11.319999999999993,
+              "overshoot_w": 29.223930177415866,
+              "undershoot_w": 109.88273324257224
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 3.319999999999993,
+              "overshoot_w": 95.60400987611018,
+              "undershoot_w": 6.344148386829346
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 0.9799999999999898,
+              "overshoot_w": 3.6113997694849616,
+              "undershoot_w": 23.65902860718191
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 16.89483333333333,
+            "p95_error_w": 92.0,
+            "overshoot_w": 92.0,
+            "undershoot_w": 125.0,
+            "outside_band_percent": 16.55,
+            "steady_p95_error_w": 18.0,
+            "steady_rmse_w": 9.509655911522536,
+            "steady_variation_w_per_s": 6.693181818181818,
+            "unsettled_steps": 0,
+            "worst_settling_s": 13.14,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 13.14,
+                "overshoot_w": 39.0,
+                "undershoot_w": 125.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 6.260000000000005,
+                "overshoot_w": 92.0,
+                "undershoot_w": 17.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 2.1599999999999966,
+                "overshoot_w": 24.0,
+                "undershoot_w": 35.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1,
+        "latency_s": 0.2,
+        "jitter_s": 0.1,
+        "phase_s": 0.0,
+        "dropouts": [
+          [
+            90,
+            98
+          ]
+        ]
+      },
+      "cadence": {
+        "period_s": 0.5,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": [
+          [
+            150,
+            158
+          ]
+        ]
+      },
+      "passed": false,
+      "absolute_passed": false,
+      "relative_passed": false,
+      "failures": [
+        "p95_error_w: 61.92839813411945 exceeds absolute budget 60.0",
+        "p95_error_w: regression 19.219 exceeds allowance 5.000",
+        "worst_settling_s: regression 6.780 exceeds allowance 2.000",
+        "delivered sensor: p95_error_w: 92.0 exceeds absolute budget 60.0",
+        "delivered sensor: p95_error_w: regression 11.000 exceeds allowance 8.100",
+        "delivered sensor: worst_settling_s: regression 5.980 exceeds allowance 2.000"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 8.64541225401335,
+          "candidate": 10.232697096183077,
+          "delta": 1.587284842169728,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "p95_error_w": {
+          "baseline": 42.709617109017245,
+          "candidate": 61.92839813411945,
+          "delta": 19.218781025102203,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 4.049295932989924,
+          "candidate": 4.1914163491117025,
+          "delta": 0.14212041612177817,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 0.9185977295540325,
+          "candidate": 0.714947640159292,
+          "delta": -0.2036500893947405,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        },
+        "worst_settling_s": {
+          "baseline": 4.540000000000006,
+          "candidate": 11.319999999999993,
+          "delta": 6.779999999999987,
+          "allowance": 2.0,
+          "direction": "worse"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": false,
+        "failures": [
+          "p95_error_w: 92.0 exceeds absolute budget 60.0",
+          "p95_error_w: regression 11.000 exceeds allowance 8.100",
+          "worst_settling_s: regression 5.980 exceeds allowance 2.000"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 15.196166666666663,
+            "candidate": 16.89483333333333,
+            "delta": 1.6986666666666679,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "p95_error_w": {
+            "baseline": 81.0,
+            "candidate": 92.0,
+            "delta": 11.0,
+            "allowance": 8.1,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 9.310931448810285,
+            "candidate": 9.509655911522536,
+            "delta": 0.19872446271225108,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 6.704545454545454,
+            "candidate": 6.693181818181818,
+            "delta": -0.011363636363635798,
+            "allowance": 1.0056818181818181,
+            "direction": "better"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          },
+          "worst_settling_s": {
+            "baseline": 7.159999999999997,
+            "candidate": 13.14,
+            "delta": 5.980000000000004,
+            "allowance": 2.0,
+            "direction": "worse"
+          }
+        }
+      }
+    },
+    {
+      "scenario": "sensor_outage",
+      "seed": 91,
+      "scores": {
+        "baseline": {
+          "mae_w": 9.191576064677841,
+          "p95_error_w": 44.25794651725411,
+          "overshoot_w": 81.54239206411492,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 8.583333333333327,
+          "steady_p95_error_w": 8.80160572607724,
+          "steady_rmse_w": 4.364645906129838,
+          "steady_variation_w_per_s": 0.7993186821353216,
+          "unsettled_steps": 0,
+          "worst_settling_s": 4.719999999999999,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 4.3799999999999955,
+              "overshoot_w": 5.473263919255203,
+              "undershoot_w": 101.7886518746445
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 4.719999999999999,
+              "overshoot_w": 81.54239206411492,
+              "undershoot_w": 6.248108706776719
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 0.5999999999999943,
+              "overshoot_w": 9.470191749101815,
+              "undershoot_w": 21.877533723731972
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 13.822500000000002,
+            "p95_error_w": 84.0,
+            "overshoot_w": 102.0,
+            "undershoot_w": 125.0,
+            "outside_band_percent": 12.383333333333345,
+            "steady_p95_error_w": 17.0,
+            "steady_rmse_w": 8.640884728364854,
+            "steady_variation_w_per_s": 6.528409090909091,
+            "unsettled_steps": 0,
+            "worst_settling_s": 6.219999999999999,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 6.219999999999999,
+                "overshoot_w": 14.0,
+                "undershoot_w": 105.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 6.180000000000007,
+                "overshoot_w": 102.0,
+                "undershoot_w": 19.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 3.180000000000007,
+                "overshoot_w": 15.0,
+                "undershoot_w": 39.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        },
+        "candidate": {
+          "mae_w": 10.540931964911595,
+          "p95_error_w": 74.03148253615083,
+          "overshoot_w": 90.8385616295499,
+          "undershoot_w": 118.52745110980021,
+          "outside_band_percent": 10.550000000000006,
+          "steady_p95_error_w": 7.584065876422751,
+          "steady_rmse_w": 4.045737037879632,
+          "steady_variation_w_per_s": 0.6667691254765914,
+          "unsettled_steps": 0,
+          "worst_settling_s": 5.859999999999999,
+          "transitions": [
+            {
+              "time_s": 60.0,
+              "delta_w": 100,
+              "settling_s": 5.859999999999999,
+              "overshoot_w": 13.935421188079317,
+              "undershoot_w": 101.21768336239
+            },
+            {
+              "time_s": 120.0,
+              "delta_w": -90,
+              "settling_s": 3.8400000000000034,
+              "overshoot_w": 82.35812925041512,
+              "undershoot_w": 5.684852334413108
+            },
+            {
+              "time_s": 180.0,
+              "delta_w": 20,
+              "settling_s": 1.3000000000000114,
+              "overshoot_w": 8.66886888667392,
+              "undershoot_w": 24.103587812366357
+            }
+          ],
+          "band_w": 20,
+          "dwell_s": 5,
+          "scored_seconds": 240,
+          "delivered_sensor_metrics": {
+            "mae_w": 15.616333333333337,
+            "p95_error_w": 92.0,
+            "overshoot_w": 104.0,
+            "undershoot_w": 125.0,
+            "outside_band_percent": 14.066666666666674,
+            "steady_p95_error_w": 17.0,
+            "steady_rmse_w": 8.932319594222623,
+            "steady_variation_w_per_s": 6.6647727272727275,
+            "unsettled_steps": 0,
+            "worst_settling_s": 7.200000000000003,
+            "transitions": [
+              {
+                "time_s": 60.0,
+                "delta_w": 100,
+                "settling_s": 7.200000000000003,
+                "overshoot_w": 18.0,
+                "undershoot_w": 113.0
+              },
+              {
+                "time_s": 120.0,
+                "delta_w": -90,
+                "settling_s": 5.219999999999999,
+                "overshoot_w": 104.0,
+                "undershoot_w": 20.0
+              },
+              {
+                "time_s": 180.0,
+                "delta_w": 20,
+                "settling_s": 3.180000000000007,
+                "overshoot_w": 15.0,
+                "undershoot_w": 40.0
+              }
+            ],
+            "band_w": 20,
+            "dwell_s": 5,
+            "scored_seconds": 240
+          }
+        }
+      },
+      "power": {
+        "period_s": 1,
+        "latency_s": 0.2,
+        "jitter_s": 0.1,
+        "phase_s": 0.0,
+        "dropouts": [
+          [
+            90,
+            98
+          ]
+        ]
+      },
+      "cadence": {
+        "period_s": 0.5,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": [
+          [
+            150,
+            158
+          ]
+        ]
+      },
+      "passed": false,
+      "absolute_passed": false,
+      "relative_passed": false,
+      "failures": [
+        "p95_error_w: 74.03148253615083 exceeds absolute budget 60.0",
+        "p95_error_w: regression 29.774 exceeds allowance 5.000",
+        "delivered sensor: p95_error_w: 92.0 exceeds absolute budget 60.0"
+      ],
+      "changes": {
+        "mae_w": {
+          "baseline": 9.191576064677841,
+          "candidate": 10.540931964911595,
+          "delta": 1.3493559002337534,
+          "allowance": 2.0,
+          "direction": "worse"
+        },
+        "p95_error_w": {
+          "baseline": 44.25794651725411,
+          "candidate": 74.03148253615083,
+          "delta": 29.77353601889672,
+          "allowance": 5.0,
+          "direction": "worse"
+        },
+        "steady_rmse_w": {
+          "baseline": 4.364645906129838,
+          "candidate": 4.045737037879632,
+          "delta": -0.31890886825020637,
+          "allowance": 2.0,
+          "direction": "better"
+        },
+        "steady_variation_w_per_s": {
+          "baseline": 0.7993186821353216,
+          "candidate": 0.6667691254765914,
+          "delta": -0.13254955665873025,
+          "allowance": 1.0,
+          "direction": "better"
+        },
+        "unsettled_steps": {
+          "baseline": 0,
+          "candidate": 0,
+          "delta": 0,
+          "allowance": 0.0,
+          "direction": "same"
+        },
+        "worst_settling_s": {
+          "baseline": 4.719999999999999,
+          "candidate": 5.859999999999999,
+          "delta": 1.1400000000000006,
+          "allowance": 2.0,
+          "direction": "worse"
+        }
+      },
+      "reported_power_comparison": {
+        "passed": false,
+        "absolute_passed": false,
+        "relative_passed": true,
+        "failures": [
+          "p95_error_w: 92.0 exceeds absolute budget 60.0"
+        ],
+        "changes": {
+          "mae_w": {
+            "baseline": 13.822500000000002,
+            "candidate": 15.616333333333337,
+            "delta": 1.7938333333333354,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "p95_error_w": {
+            "baseline": 84.0,
+            "candidate": 92.0,
+            "delta": 8.0,
+            "allowance": 8.4,
+            "direction": "worse"
+          },
+          "steady_rmse_w": {
+            "baseline": 8.640884728364854,
+            "candidate": 8.932319594222623,
+            "delta": 0.29143486585776834,
+            "allowance": 2.0,
+            "direction": "worse"
+          },
+          "steady_variation_w_per_s": {
+            "baseline": 6.528409090909091,
+            "candidate": 6.6647727272727275,
+            "delta": 0.1363636363636367,
+            "allowance": 1.0,
+            "direction": "worse"
+          },
+          "unsettled_steps": {
+            "baseline": 0,
+            "candidate": 0,
+            "delta": 0,
+            "allowance": 0.0,
+            "direction": "same"
+          },
+          "worst_settling_s": {
+            "baseline": 6.219999999999999,
+            "candidate": 7.200000000000003,
+            "delta": 0.980000000000004,
+            "allowance": 2.0,
+            "direction": "worse"
+          }
+        }
+      }
+    }
+  ]
+}
