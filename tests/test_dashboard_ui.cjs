@@ -9,8 +9,8 @@ class Element {
   setAttribute(k,v){this[k]=v;}addEventListener(event,handler){this.events[event]=handler;}
   async change(v){this.value=v;await this.events.change?.();}
 }
-const ids=['history','scenario','seed','notice','overview','chart','chart-label','metrics','decisions','provenance','downloads','json','motor-note','learning','learning-label','learning-coverage','learning-metrics','learning-events','learning-evidence','learning-status','learning-hashes','learning-decisions','learning-grid'];
-const nodes=Object.fromEntries(ids.map(id=>[id,new Element(['history','scenario','seed'].includes(id)?'select':'div')]));
+const ids=['firmware','test-type','duration','table','duration-filter','table-filter','history','scenario','seed','notice','overview','chart','chart-label','metrics','decisions','provenance','downloads','json','motor-note','learning','learning-label','learning-coverage','learning-metrics','learning-events','learning-evidence','learning-status','learning-hashes','learning-decisions','learning-grid'];
+
 const score={mae_w:1,p95_error_w:2};const row=(scenario,seed)=>({scenario,seed,absolute_passed:true,relative_passed:true,failures:[],scores:{baseline:score,candidate:score},reported_power_comparison:{absolute_passed:true,relative_passed:true,failures:[]}});
 const make=(id,rows,date)=>({id,metadata:{run_completed_at:date},comparison:{status:'complete',runs:rows},traces:{}});
 const runs={a:make('a',[row('steps',7),row('ramp',7),row('ramp',91)],'2026-10-12T17:00:00Z'),b:make('b',[row('steps',7),row('ramp',7),row('ramp',91)],'2026-10-11T17:00:00Z'),c:make('c',[row('steps',7)],'2026-10-10T17:00:00Z')};
@@ -24,32 +24,54 @@ for(const [minutes,state,support] of [[30,'empty',0],[60,'partial',7],[90,'full'
  }
  r.overall_checks={absolute_passed:false,relative_passed:false,passed:false};
  const id=`long-${state}`,run=make(id,[r],'2026-10-09T17:00:00Z');
- Object.assign(run.metadata,{experiment_duration_min:minutes,initial_state:state,training_run_id:'shared-training',candidate_ref:'erg-spike-gate'});
+ Object.assign(run.metadata,{experiment:'continuous-long-ride-v1',experiment_duration_min:minutes,initial_state:state,training_run_id:'shared-training',candidate_ref:'erg-spike-gate'});
  run.comparison.experiment='continuous-long-ride-v1';run.traces={'long_ride-27':{candidate:[[0,150,151,152],[minutes*60,180,179,178]]}};runs[id]=run;
 }
-const history=Object.values(runs).map(r=>({id:r.id,metadata:r.metadata,display_ref:'branch-'+r.id}));
-let delayedReject=null;
-const ctx={document:{getElementById:id=>nodes[id],createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)},location:{hash:''},Intl,Date,console,fetch:async url=>{
-  if(url.startsWith('history.json'))return {ok:true,json:async()=>history};
+// Same branch, different commits, and repeated snapshots must stay separately selectable.
+runs['a-old']=make('a-old',[row('steps',7),row('ramp',7),row('ramp',91)],'2026-10-08T17:00:00Z');
+runs['long-full-old']=JSON.parse(JSON.stringify(runs['long-full']));runs['long-full-old'].id='long-full-old';runs['long-full-old'].metadata.run_completed_at='2026-10-07T17:00:00Z';
+const history=Object.values(runs).map((r,i)=>{
+ const commit=(i+1).toString(16).repeat(40).slice(0,40);
+ r.comparison.firmware={candidate:{commit},baseline:{commit:'0'.repeat(40)}};
+ return {id:r.id,metadata:r.metadata,display_ref:['b','c'].includes(r.id)?'branch-'+r.id:'erg-spike-gate',candidate_commit:commit,selections:r.comparison.runs.map(({scenario,seed})=>({scenario,seed}))};
+});
+// A release remains distinct from a similarly named branch.
+const release=make('release',[row('steps',7)],'2026-10-06T17:00:00Z');runs.release=release;
+history.push({id:'release',metadata:{...release.metadata,release_tag:'v25.1',release_published_at:'2025-01-01T00:00:00Z'},display_ref:'v25.1',candidate_commit:'f'.repeat(40),selections:[{scenario:'steps',seed:7}]});
+const source=fs.readFileSync(require('node:path').join(__dirname,'../dashboard/app.js'),'utf8');
+const tick=()=>new Promise(setImmediate);
+function harness(hash=''){
+ const nodes=Object.fromEntries(ids.map(id=>[id,new Element(['firmware','test-type','duration','table','history','scenario','seed'].includes(id)?'select':'div')]));
+ const pending=new Map(),requests=[];
+ const ctx={document:{getElementById:id=>nodes[id],createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)},location:{hash},Intl,Date,console,fetch:async url=>{
+  requests.push(url);
+  if(url.startsWith('history.json'))return {ok:true,json:async()=>history.slice()};
+  if(pending.has(url))return pending.get(url).promise;
   if(url.startsWith('motor-v1/'))return {ok:true,json:async()=>({traces:{'ramp-91':[[0,10000],[1,11000],[2,null],[3,12000],[4,13000]],'long_ride-27':[[0,10000],[5400,11000]]}})};
-  const id=url.split('/')[1];if(id==='broken')return new Promise((_,reject)=>delayedReject=reject);
-  if(id==='unavailable')return {ok:false};
-  return {ok:true,json:async()=>runs[id]};
-}};
-vm.createContext(ctx);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dashboard/app.js'),'utf8'),ctx);
+  const id=url.split('/')[1];return {ok:!!runs[id],json:async()=>runs[id]};
+ }};
+ vm.createContext(ctx);vm.runInContext(source,ctx);
+ return {nodes,ctx,requests,delay(url){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});pending.set(url,{promise});return {resolve(value){pending.delete(url);resolve(value);},reject(error){pending.delete(url);reject(error);}};}};
+}
+const main=harness(),{nodes,ctx}=main;
+const cleared=(all=true)=>{assert.equal(nodes.chart.children.length,0);assert.equal(nodes.metrics.children.length,0);assert.equal(nodes.learning.hidden,true);assert.equal(nodes['learning-metrics'].children.length,0);assert.equal(nodes['learning-evidence'].children.length,0);if(all)assert.equal(nodes.downloads.children.length,0);else assert.ok(nodes.downloads.children.every(n=>n.href.includes(`runs/${nodes.history.value}/`)));};
 (async()=>{
- await new Promise(setImmediate);assert.equal(nodes.scenario.value,'steps');assert.equal(nodes.seed.value,'7');
+ await tick();assert.equal(nodes.firmware.value,'branch:erg-spike-gate');assert.equal(nodes['test-type'].value,'short');assert.equal(nodes.scenario.value,'steps');assert.equal(nodes.seed.value,'7');
+ assert.deepEqual(nodes.history.children.map(n=>n.value),['a','a-old']);assert.equal(nodes.firmware.children.filter(n=>n.value==='branch:erg-spike-gate').length,1);assert.ok(nodes.firmware.children.some(n=>n.value==='release:v25.1'&&n.textContent.includes('2025-01-01')));
+ assert.equal(nodes['duration-filter'].hidden,true);assert.equal(nodes['table-filter'].hidden,true);
  await nodes.scenario.change('ramp');await nodes.seed.change('91');assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');
- await nodes.history.change('b');assert.equal(nodes.scenario.value,'ramp');assert.equal(nodes.seed.value,'91');assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');
- await nodes.history.change('c');assert.equal(nodes.scenario.value,'ramp');assert.equal(nodes.seed.value,'91');assert.match(nodes.notice.textContent,/unavailable/);assert.equal(nodes.metrics.children.length,0);assert.equal(nodes.chart.children.length,0);
- await nodes.history.change('a');assert.equal(nodes.scenario.value,'ramp');assert.equal(nodes.seed.value,'91');assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');assert.ok(nodes.metrics.children.length>0);
- const stale=nodes.history.change('broken');await new Promise(setImmediate);await nodes.history.change('b');delayedReject(Error('old failed request'));await stale;assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');
+ await nodes.history.change('a-old');assert.equal(nodes.history.value,'a-old');assert.match(nodes.notice.textContent,/Tested candidate: 777777777777/);assert.match(nodes.provenance.textContent,/7777777777777777777777777777777777777777/);
+ await nodes.seed.change('7');assert.equal(nodes.history.value,'a-old');await nodes.seed.change('91');
+ await nodes.firmware.change('branch:branch-b');assert.equal(nodes.scenario.value,'ramp');assert.equal(nodes.seed.value,'91');assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');assert.deepEqual(nodes.history.children.map(n=>n.value),['b']);
+ await nodes.firmware.change('branch:branch-c');assert.equal(nodes.scenario.value,'ramp');assert.equal(nodes.seed.value,'91');assert.match(nodes.notice.textContent,/unavailable/i);cleared(false);
+ await nodes.firmware.change('branch:erg-spike-gate');assert.equal(nodes.history.value,'a');assert.equal(nodes.scenario.value,'ramp');assert.equal(nodes.seed.value,'91');assert.ok(nodes.metrics.children.length>0);
+ const delayed=main.delay('runs/a-old/data.json');const stale=nodes.history.change('a-old');await tick();cleared();await nodes.firmware.change('branch:branch-b');delayed.reject(Error('old failed request'));await stale;assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');assert.equal(nodes.history.value,'b');
  assert.equal(nodes.chart.children.filter(n=>n['data-series']==='actual-motor').length,2);assert.ok(nodes.chart.children.some(n=>n.textContent==='100 W'));assert.ok(nodes.chart.children.some(n=>n.textContent==='Motor (steps)'));assert.match(nodes['motor-note'].textContent,/Missing position samples/);
  runs.b.motor={traces:{}};vm.runInContext('current.motor={traces:{}};render()',ctx);assert.match(nodes['motor-note'].textContent,/unavailable/);assert.equal(nodes.chart.children.filter(n=>n['data-series']==='actual-motor').length,0);
  assert.equal(nodes.learning.hidden,true);assert.equal(nodes['learning-metrics'].children.length,0);
- for(const [state,label]of [['empty','30 min · empty starting table'],['partial','60 min · partially learned TESTED RANGE'],['full','90 min · fully learned TESTED RANGE']])assert.ok(nodes.history.children.some(n=>n.value===`long-${state}`&&n.textContent.endsWith(label)));
- await nodes.history.change('long-full');assert.equal(nodes.scenario.value,'ramp');assert.equal(nodes.seed.value,'91');assert.equal(nodes.learning.hidden,true);
- await nodes.scenario.change('long_ride');assert.equal(nodes.learning.hidden,true);await nodes.seed.change('27');
+ await nodes.firmware.change('branch:erg-spike-gate');await nodes['test-type'].change('long');assert.equal(nodes['duration-filter'].hidden,false);assert.equal(nodes['table-filter'].hidden,false);assert.equal(nodes.scenario.value,'long_ride');assert.equal(nodes.seed.value,'91');cleared(false);
+ await nodes.duration.change('90');await nodes.table.change('full');assert.equal(nodes.seed.value,'91');cleared(false);await nodes.seed.change('27');assert.deepEqual(nodes.history.children.map(n=>n.value),['long-full','long-full-old']);
+ await nodes.history.change('long-full-old');assert.equal(nodes.history.value,'long-full-old');await nodes.seed.change('27');assert.equal(nodes.history.value,'long-full-old');await nodes.history.change('long-full');
  assert.equal(nodes.learning.hidden,false);assert.equal(nodes['learning-label'].textContent,'90 min · fully learned TESTED RANGE');
  assert.equal(nodes['learning-metrics'].children.length,13);assert.equal(nodes['learning-events'].children.length,7);assert.equal(nodes['learning-hashes'].children.length,9);
  assert.match(nodes['learning-metrics'].textContent,/early · 0.00–6.00 minBaselinePlant11.0012.0013.001.00/);
@@ -63,15 +85,22 @@ vm.createContext(ctx);vm.runInContext(fs.readFileSync(require('node:path').join(
  runs['long-full'].metadata.training_run_id='../outside';delete runs['long-full'].comparison.runs[0].scores.baseline.windows[0].events;
  vm.runInContext('render()',ctx);assert.equal(nodes['learning-evidence'].children.some(n=>n.tagName==='a'),false);assert.match(nodes['learning-events'].children[1].textContent,/n\/a/);
  // Selection survives both directions, while stale learning data is hidden and cleared.
- await nodes.history.change('b');assert.equal(nodes.scenario.value,'long_ride');assert.equal(nodes.seed.value,'27');assert.equal(nodes.learning.hidden,true);assert.equal(nodes['learning-metrics'].children.length,0);assert.equal(nodes['learning-evidence'].children.length,0);assert.equal(nodes['learning-decisions'].children.length,0);
- await nodes.history.change('long-partial');assert.equal(nodes.learning.hidden,false);assert.match(nodes['learning-coverage'].textContent,/7 \/ 25 tested cells → 25 \/ 25 tested cells/);
- await nodes.history.change('long-empty');assert.equal(nodes.learning.hidden,false);assert.match(nodes['learning-coverage'].textContent,/0 \/ 25 tested cells/);
+ await nodes.firmware.change('branch:branch-b');assert.equal(nodes.scenario.value,'long_ride');assert.equal(nodes.seed.value,'27');assert.equal(nodes.duration.value,'90');assert.equal(nodes.table.value,'full');assert.equal(nodes.history.disabled,true);cleared();assert.equal(nodes['learning-decisions'].children.length,0);assert.match(nodes.notice.textContent,/UNAVAILABLE/);
+ await nodes.firmware.change('branch:erg-spike-gate');assert.equal(nodes.history.value,'long-full');assert.equal(nodes.learning.hidden,false);
+ await nodes.duration.change('60');cleared();assert.equal(nodes.table.value,'full');await nodes.table.change('partial');assert.equal(nodes.learning.hidden,false);assert.match(nodes['learning-coverage'].textContent,/7 \/ 25 tested cells → 25 \/ 25 tested cells/);
+ await nodes.duration.change('30');cleared();await nodes.table.change('empty');assert.equal(nodes.learning.hidden,false);assert.match(nodes['learning-coverage'].textContent,/0 \/ 25 tested cells/);
  runs['long-empty'].comparison.runs[0].scores.baseline.windows=[];
  vm.runInContext('render()',ctx);assert.match(nodes['learning-status'].textContent,/3 \/ 6/);assert.equal(nodes['learning-metrics'].children.length,7);
- const pending=nodes.history.change('broken');await new Promise(setImmediate);assert.equal(nodes.learning.hidden,true);assert.equal(nodes['learning-hashes'].children.length,0);
- await nodes.history.change('long-partial');delayedReject(Error('late old failure'));await pending;assert.equal(nodes.learning.hidden,false);assert.match(nodes['learning-label'].textContent,/partially learned/);
- await nodes.history.change('unavailable');assert.equal(nodes.learning.hidden,true);assert.equal(nodes['learning-evidence'].children.length,0);assert.match(nodes.notice.textContent,/No previous run/);
- await nodes.history.change('a');await nodes.scenario.change('ramp');await nodes.seed.change('91');assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');assert.equal(nodes.learning.hidden,true);
+ // A stale successful data request and stale motor response cannot resurrect old results.
+ const slow=main.delay('runs/long-empty/data.json');const pending=nodes.history.change('long-empty');await tick();cleared();await nodes.duration.change('60');await nodes.table.change('partial');slow.resolve({ok:true,json:async()=>runs['long-empty']});await pending;assert.equal(nodes.history.value,'long-partial');assert.match(nodes['learning-label'].textContent,/partially learned/);
+ const slowMotor=main.delay('motor-v1/long-partial.json');const motorPending=nodes.history.change('long-partial');await tick();await nodes.firmware.change('branch:branch-b');slowMotor.resolve({ok:true,json:async()=>({traces:{}})});await motorPending;cleared();assert.match(nodes.notice.textContent,/UNAVAILABLE/);
+ await nodes['test-type'].change('short');assert.equal(nodes.scenario.value,'ramp');assert.equal(nodes.seed.value,'27');cleared(false);await nodes.seed.change('91');assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');assert.equal(nodes.learning.hidden,true);
+ // Deep links select firmware, type, duration, starting table, exact experiment and its first pair.
+ const linked=harness('#long-full-old');await tick();assert.equal(linked.nodes.firmware.value,'branch:erg-spike-gate');assert.equal(linked.nodes['test-type'].value,'long');assert.equal(linked.nodes.duration.value,'90');assert.equal(linked.nodes.table.value,'full');assert.equal(linked.nodes.history.value,'long-full-old');assert.equal(linked.nodes.scenario.value,'long_ride');assert.equal(linked.nodes.seed.value,'27');assert.equal(linked.nodes.learning.hidden,false);
+ const missing=harness('#not-a-run');await tick();assert.equal(missing.nodes.history.value,'a');
+ const failure=main.delay('runs/b/data.json');const failed=nodes.history.change('b');failure.resolve({ok:false});await failed;cleared();assert.match(nodes.notice.textContent,/No previous run/);
+ await nodes.firmware.change('branch:erg-spike-gate');assert.equal(nodes['chart-label'].textContent,'ramp / seed 91');
  const html=fs.readFileSync(require('node:path').join(__dirname,'../dashboard/index.html'),'utf8');assert.match(html,/not accepted insertions/);assert.match(html,/loaded into RAM; flash persistence is not tested/);assert.match(html,/do not establish that learning causes an improvement/);
- console.log('PASS: preserved filters, motor axes/gaps, long-ride learning evidence, safe links, unavailable recovery, and stale-fetch isolation');
+ console.log('PASS: firmware grouping, exact snapshots, deep links, absent combinations, preserved filters, motor axes/gaps, long-ride learning evidence, safe links, unavailable recovery, and stale-fetch isolation');
 })().catch(e=>{console.error(e);process.exitCode=1;});
+

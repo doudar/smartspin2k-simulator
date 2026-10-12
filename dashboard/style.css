@@ -3,3 +3,6 @@
 svg text.motor-axis{fill:#ff646b}
 
 [hidden]{display:none!important}.learning-coverage{grid-template-columns:repeat(2,minmax(0,1fr))}.learning-coverage strong{font-size:20px;overflow-wrap:anywhere}#learning .scroll table{min-width:780px}#learning th{white-space:normal}#learning-label{color:var(--muted);font-size:13px}#learning-evidence{margin-bottom:0}.learning-fingerprints{margin-top:20px}.learning-fingerprints td:last-child{font-family:monospace;font-size:11px;overflow-wrap:anywhere}@media(max-width:700px){.learning-coverage{grid-template-columns:1fr}}
+
+
+.toolbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end}.toolbar label{min-width:0}.toolbar select{width:100%;font-size:16px;min-height:48px}.firmware-filter,.experiment-filter{grid-column:span 2}.selector-help{font-size:13px;margin-top:-12px}@media(max-width:700px){.toolbar{grid-template-columns:minmax(0,1fr)}.firmware-filter,.experiment-filter{grid-column:auto}}

@@ -196,7 +196,7 @@ def build(history,output):
         candidate=data['comparison'].get('firmware',{}).get('candidate',{}).get('commit')
         display_ref=data['metadata'].get('release_tag') or data['metadata'].get('candidate_ref') or KNOWN_TESTED_REFS.get(candidate) or ('commit '+candidate[:12] if isinstance(candidate,str) else 'Unrecorded ref')
         if data['metadata'].get('evidence_only') is True: continue
-        entries.append({'id':run.name,'metadata':data['metadata'],'display_ref':display_ref,'candidate_commit':candidate,'status':data['comparison']['status'],'pairs':len(data['comparison'].get('runs',[]))})
+        entries.append({'id':run.name,'metadata':data['metadata'],'display_ref':display_ref,'candidate_commit':candidate,'status':data['comparison']['status'],'pairs':len(data['comparison'].get('runs',[])),'selections':[{'scenario':row['scenario'],'seed':row['seed']} for row in data['comparison'].get('runs',[])]})
     for name in ('index.html','app.js','style.css'): shutil.copyfile(Path(__file__).parent/name,output/name)
     template=(output/'index.html').read_text()
     for asset in ('app.js','style.css'):

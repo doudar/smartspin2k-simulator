@@ -144,3 +144,28 @@ Motor traces use the same extrema-preserving approach. Archives retain the
 existing32MiB/file and200MiB/case bounds; measured90-minute traces fit those
 bounds. Build directories and executables are excluded. Unsafe or oversized
 payloads are reported as incomplete, never executed or silently truncated.
+
+
+## Firmware-first test navigation
+
+The primary selector groups by recorded firmware branch or release. Test type,
+ride duration, starting table, scenario and seed are separate controls. The
+secondary experiment selector shows the original experiment date, exact candidate
+commit and unique record ID. A branch grouping is navigation only: different
+tests can use different revisions, simulators or adapters. No scores are pooled
+across records and no equivalence between branch snapshots is assumed.
+
+Switching firmware keeps the chosen test, duration, starting table, scenario and
+seed. Missing combinations remain selected and explicitly unavailable, with no
+stale chart or learning panel. A firmware with no matching experiment also clears
+its evidence links and provenance. Switching test type deliberately selects a
+suitable scenario (remembering the previous short scenario), while retaining the
+seed. A missing seed is never silently replaced. The newest matching recorded
+experiment is selected when changing firmware; other dates remain selectable.
+Existing run-ID URL fragments still open the corresponding exact evidence record.
+
+Long-ride coverage is currently limited to the recorded development snapshot.
+Historical release baselines inside paired results are not relabeled as standalone
+candidate experiments. This navigation update reruns no physics and changes no
+immutable run files, original scores, evidence ZIPs or checksums. The renderer
+adds only a scenario/seed selection catalog to the regenerated history index.
