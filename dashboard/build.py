@@ -11,6 +11,8 @@ SAFE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,100}$')
 ALLOWED = {'.json', '.csv', '.log', '.ptab', '.txt'}
 MAX_FILE = 32 * 1024 * 1024
 MAX_RUN = 200 * 1024 * 1024
+# Verified tested ref at experiment time; never infer the candidate from simulator main.
+KNOWN_TESTED_REFS = {'782c2b5e303115f90bf8f81b724da5717362de39':'erg-spike-gate'}
 
 def read_json(path):
     if path.stat().st_size > MAX_FILE: raise ValueError('JSON too large')
@@ -82,7 +84,7 @@ def chart(raw):
 def validate_metadata(metadata):
     valid_tree(metadata)
     if not isinstance(metadata,dict): raise ValueError('Metadata must be an object')
-    for key in ('run_started_at','run_completed_at','imported_at','release_tag','release_published_at','baseline_release_tag','baseline_release_published_at','adapter_commit','simulator_commit','notes','workflow_url','workflow_conclusion','workflow_updated_at'):
+    for key in ('run_started_at','run_completed_at','imported_at','candidate_ref','release_tag','release_published_at','baseline_release_tag','baseline_release_published_at','adapter_commit','simulator_commit','notes','workflow_url','workflow_conclusion','workflow_updated_at'):
         if metadata.get(key) is not None and not isinstance(metadata[key],str): raise ValueError('Invalid metadata text')
     return metadata
 
@@ -122,7 +124,9 @@ def build(history,output):
         for name in ('data.json','comparison.json','SHA256SUMS.txt','evidence.zip'):
             if (run/name).is_symlink(): raise ValueError('Symlink')
             shutil.copyfile(run/name,target/name)
-        entries.append({'id':run.name,'metadata':data['metadata'],'status':data['comparison']['status'],'pairs':len(data['comparison'].get('runs',[]))})
+        candidate=data['comparison'].get('firmware',{}).get('candidate',{}).get('commit')
+        display_ref=data['metadata'].get('release_tag') or data['metadata'].get('candidate_ref') or KNOWN_TESTED_REFS.get(candidate) or ('commit '+candidate[:12] if isinstance(candidate,str) else 'Unrecorded ref')
+        entries.append({'id':run.name,'metadata':data['metadata'],'display_ref':display_ref,'candidate_commit':candidate,'status':data['comparison']['status'],'pairs':len(data['comparison'].get('runs',[]))})
     for name in ('index.html','app.js','style.css'): shutil.copyfile(Path(__file__).parent/name,output/name)
     template=(output/'index.html').read_text()
     for asset in ('app.js','style.css'):

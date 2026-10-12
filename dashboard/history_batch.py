@@ -11,6 +11,7 @@ def main():
     for label,candidate,published in MATRIX:
         output=Path('output')/label
         cmd=[sys.executable,str(ROOT/'experiment.py'),'--firmware-root','adapter','--baseline-root','baseline','--candidate-root',candidate,'--output',str(output),'--adapter-sha256',ADAPTER,'--adapter-patch',str(ROOT/'compatibility/history-adapter.patch'),'--simulator-root','engine']
+        cmd+=['--candidate-ref',label if published else 'erg-spike-gate']
         if published:cmd+=['--release-tag',label,'--release-published-at',published]
         code=subprocess.call(cmd);codes.append(code)
         manifest=output/'comparison.json'
