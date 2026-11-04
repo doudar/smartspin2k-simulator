@@ -214,3 +214,11 @@ repository Pages source set to **GitHub Actions** before its first deployment.
 See [publishing, security, retention and historical-release notes](docs/dashboard.md).
 
 See [Automatic PR experiments](docs/automation.md) for the event relay, dynamic release policy, cache identities, fork approval boundary and one-time activation.
+
+## Short high-power diagnostics
+
+For paired 500/700/1000 W tuning with explicit ±10 W five-second dwell, later
+excursions, final settling, 100 W recovery, and a protected ≤240 W prefix, see
+[the high-power diagnostic](docs/high-power-diagnostics.md). This separate runner
+preserves the published 90-minute experiment and unchanged full fixture covering
+the original 45 declared training-grid cells.

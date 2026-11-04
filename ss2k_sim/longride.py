@@ -213,7 +213,7 @@ def sprint_summary(trace, windows, snapshots):
     return results
 
 
-def run_one(adapter,exe,config,profile,output,workout,seed,*,table=None,windows=(),sprints=(),stress=False,sensitivity=5):
+def run_one(adapter,exe,config,profile,output,workout,seed,*,table=None,windows=(),sprints=(),stress=False,sensitivity=5,extra_snapshot_times=()):
     snapshots=[]; control_events=[]; duration=workout.duration
     # Stress is away from the repeated probes; pause/restart is a real FTMS procedure.
     outage=duration*.25
@@ -221,7 +221,7 @@ def run_one(adapter,exe,config,profile,output,workout,seed,*,table=None,windows=
     cadence=SensorSchedule(.25,.1)
     pauses=((outage+30,False),(outage+90,True)) if stress else ()
     factory=observed_bridge(adapter,snapshots,initial_table=table,
-        snapshot_times=sorted({w['start_s'] for w in (*windows,*sprints)}|{round(t) for t in np.arange(60,duration,60)}),pause_events=pauses,control_events=control_events)
+        snapshot_times=sorted({w['start_s'] for w in (*windows,*sprints)}|set(extra_snapshot_times)|{round(t) for t in np.arange(60,duration,60)}),pause_events=pauses,control_events=control_events)
     trace,meta=run(workout,config,exe,output,seed=seed,initial_position=profile.get('start_position',7433),
         power_schedule=power,cadence_schedule=cadence,packet_ingress=True,bridge_factory=factory,sensitivity=sensitivity)
     final=json.loads((output/'power_table.json').read_text()); snapshots.append({'time_s':duration,'table':final})
