@@ -1,0 +1,371 @@
+{
+  "status": "failed",
+  "passed": false,
+  "coverage_level": "Production BLE packet decode/collect + FTMS procedure + ERG + virtual motor; no radio, ESP32 scheduler or physical hardware",
+  "firmware": {
+    "baseline": {
+      "root": "/tmp/ss2k-baseline-00kgl6g0/source",
+      "commit": "a29b7a43e855214912cffd56112c0f59238cff99",
+      "source_sha256": "98373a7c657bd07d3a4a3967f59c095896cf1bb985863e93794611955d008fed",
+      "dirty": false
+    },
+    "candidate": {
+      "root": "/tmp/work/candidate",
+      "commit": "df59de54a85459e1b155a6f1b54c29d159de8481",
+      "source_sha256": "06425463ff6854472af576905d1b4213911fad9027d49a4c0dc885e97af06a9f",
+      "dirty": false
+    }
+  },
+  "adapter": {
+    "firmware_root": "/tmp/work/adapter",
+    "commit": "b776105cd1e3edb93a91bada3f27aaecc25533dc",
+    "dirty": true,
+    "sha256": "8b6b10d01534988b06185787ae374c5ba63c93c985de1ba68830c2cf8e184195",
+    "files": [
+      "bridge.py",
+      "native.cpp",
+      "virtual_ble.py",
+      "virtual_ble_facade.h",
+      "virtual_ble_runtime.inc",
+      "virtual_ftms.py",
+      "virtual_ftms.hpp"
+    ]
+  },
+  "baseline_selection": {
+    "repository": "https://github.com/doudar/SmartSpin2k.git",
+    "ref": "refs/heads/develop",
+    "commit": "a29b7a43e855214912cffd56112c0f59238cff99",
+    "mode": "develop",
+    "resolved_at": "2026-11-08T23:31:38.187638+00:00"
+  },
+  "simulator_sha256": "c4d9efa4fcd40bee0c552526622799d4d69c422d047f95da3bf6eed02c10cb07",
+  "profile_sha256": "782a93ca67c555558f1d1133369139498023b29d07cfbf5048cf4c517a0d2ad8",
+  "package_config_sha256": "f0cdb35ca7bfc2606b579087f35875ad337de6022e13fb0c4dc1bbc8c694272e",
+  "bike": {
+    "position_knots": [
+      0,
+      6000,
+      8000,
+      10000,
+      12000,
+      14000,
+      16000,
+      18000,
+      20000,
+      24482
+    ],
+    "watts_at_80rpm": [
+      0,
+      23.43102633024972,
+      30.205542983775036,
+      64.01337391541917,
+      123.54432267450241,
+      189.40622743931186,
+      284.40907188025204,
+      413.77933813788474,
+      514.4721236278851,
+      945.4629853544773
+    ],
+    "cadence_exponent": 1.7614167093513402,
+    "lag_s": 0.7754499480433025,
+    "delay_s": 1.117460704267879,
+    "sample_period_s": 1.0,
+    "noise_w": 8.096509811914622,
+    "noise_correlation_s": 1.5124234341042593,
+    "min_position": 0,
+    "max_position": 24482,
+    "backlash_steps": 0,
+    "surface": null,
+    "floor_watts_at_80rpm": 0,
+    "floor_cadence_exponent": 1.5
+  },
+  "seeds": [
+    7
+  ],
+  "absolute_budgets": {
+    "mae_w": 25.0,
+    "p95_error_w": 60.0,
+    "overshoot_w": 150.0,
+    "steady_rmse_w": 35.0,
+    "unsettled_steps": 0.0
+  },
+  "budget_status": "Provisional engineering budgets, not calibrated acceptance or hardware fidelity proof",
+  "scenarios": [
+    {
+      "name": "steps",
+      "segments": [
+        {
+          "duration_s": 60,
+          "start_w": 150,
+          "end_w": 150,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 250,
+          "end_w": 250,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 160,
+          "end_w": 160,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 180,
+          "end_w": 180,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "bbbadca3fbb4dad740fff5caf516f718b6934c6ab7b0d961101914d895835986",
+      "power_schedule": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence_schedule": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      }
+    },
+    {
+      "name": "ramp",
+      "segments": [
+        {
+          "duration_s": 45,
+          "start_w": 120,
+          "end_w": 120,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 90,
+          "start_w": 120,
+          "end_w": 300,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 45,
+          "start_w": 300,
+          "end_w": 300,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 300,
+          "end_w": 120,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "7fdcb9639837e292b76229667f90a38e4ac8dfdef1670c413fddc0b6d7af2dcc",
+      "power_schedule": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence_schedule": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      }
+    },
+    {
+      "name": "cadence_shift",
+      "segments": [
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 90
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 65
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 105
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "4338b5bb18df0b3a5203452c662424d3a6625a385c20c688dfbfbcf18f607dbc",
+      "power_schedule": {
+        "period_s": 1.0,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence_schedule": {
+        "period_s": 0.25,
+        "latency_s": 0.0,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      }
+    },
+    {
+      "name": "slow_power",
+      "segments": [
+        {
+          "duration_s": 60,
+          "start_w": 150,
+          "end_w": 150,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 250,
+          "end_w": 250,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 160,
+          "end_w": 160,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 180,
+          "end_w": 180,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "bbbadca3fbb4dad740fff5caf516f718b6934c6ab7b0d961101914d895835986",
+      "power_schedule": {
+        "period_s": 2,
+        "latency_s": 0.35,
+        "jitter_s": 0.1,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence_schedule": {
+        "period_s": 0.25,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      }
+    },
+    {
+      "name": "fast_power_slow_cadence",
+      "segments": [
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 90
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 65
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 105
+        },
+        {
+          "duration_s": 60,
+          "start_w": 200,
+          "end_w": 200,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "4338b5bb18df0b3a5203452c662424d3a6625a385c20c688dfbfbcf18f607dbc",
+      "power_schedule": {
+        "period_s": 0.25,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      },
+      "cadence_schedule": {
+        "period_s": 2,
+        "latency_s": 0.4,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": []
+      }
+    },
+    {
+      "name": "sensor_outage",
+      "segments": [
+        {
+          "duration_s": 60,
+          "start_w": 150,
+          "end_w": 150,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 250,
+          "end_w": 250,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 160,
+          "end_w": 160,
+          "cadence_rpm": 85
+        },
+        {
+          "duration_s": 60,
+          "start_w": 180,
+          "end_w": 180,
+          "cadence_rpm": 85
+        }
+      ],
+      "workout_sha256": "bbbadca3fbb4dad740fff5caf516f718b6934c6ab7b0d961101914d895835986",
+      "power_schedule": {
+        "period_s": 1,
+        "latency_s": 0.2,
+        "jitter_s": 0.1,
+        "phase_s": 0.0,
+        "dropouts": [
+          [
+            90,
+            98
+          ]
+        ]
+      },
+      "cadence_schedule": {
+        "period_s": 0.5,
+        "latency_s": 0.1,
+        "jitter_s": 0.0,
+        "phase_s": 0.0,
+        "dropouts": [
+          [
+            150,
+            158
+          ]
+        ]
+      }
+    }
+  ],
+  "runs": [],
+  "error": "CalledProcessError: Command '['/usr/bin/g++', '-O2', '-std=c++20', '-DPLATFORMIO_ENV_NATIVE', '-I/output/release-df59de54a854/short/baseline/build', '-I/tmp/ss2k-baseline-00kgl6g0/source/include', '-I/tmp/ss2k-baseline-00kgl6g0/source/lib/SS2K/include', '-I/tmp/ss2k-baseline-00kgl6g0/source/lib/ArduinoCompat/include', '/output/release-df59de54a854/short/baseline/build/erg_bridge.cpp', '/tmp/ss2k-baseline-00kgl6g0/source/src/PowerTable_Helpers.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_ChronoData.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_CscSensorData.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_CyclePowerData.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_EchelonData.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_FitnessMachineIndoorBikeData.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_FlywheelData.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_HeartRateData.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_PelotonData.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_SensorData.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_SensorDataFactory.cpp', '/tmp/ss2k-baseline-00kgl6g0/source/lib/ArduinoCompat/src/NimBLEUUID.cpp', '/output/release-df59de54a854/short/baseline/build/virtual_ble_endian.o', '-DSS2K_PACKET_INGRESS', '-include', '/tmp/ss2k-baseline-00kgl6g0/source/lib/ArduinoCompat/include/os/endian.h', '-o', '/output/release-df59de54a854/short/baseline/build/erg_bridge.exe']' returned non-zero exit status 1."
+}
